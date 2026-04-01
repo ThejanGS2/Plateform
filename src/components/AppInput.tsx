@@ -40,6 +40,8 @@ export const AppInput: React.FC<AppInputProps> = ({
           secureTextEntry={secureTextEntry && !showPassword}
           keyboardType={keyboardType}
           autoCapitalize="none"
+          textContentType="none" // Helps prevent unwanted system highlights
+          importantForAutofill="no" // Disables the "yellow box" on Android
         />
         {secureTextEntry && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
+import { useStore } from '@/store/useStore';
 
 const CATEGORIES = [
   { id: '1', name: 'All', icon: '🔥' },
@@ -20,6 +21,8 @@ const AVAILABLE_FOODS = [
 
 export default function HomeScreen({ navigation }: any) {
   const [activeCategory, setActiveCategory] = useState('All');
+  const user = useStore((state) => state.user);
+  const currentAddress = useStore((state) => state.currentAddress);
 
   const filteredFoods = AVAILABLE_FOODS.filter(food => activeCategory === 'All' || food.category === activeCategory);
 
@@ -34,8 +37,8 @@ export default function HomeScreen({ navigation }: any) {
           </TouchableOpacity>
           <View style={styles.addressContainer}>
             <Text style={styles.deliverTo}>DELIVER TO</Text>
-            <TouchableOpacity style={styles.addressDropdown}>
-              <Text style={styles.addressText}>Halal Lab office</Text>
+            <TouchableOpacity style={styles.addressDropdown} onPress={() => navigation.navigate('Addresses')}>
+              <Text style={styles.addressText} numberOfLines={1}>{currentAddress}</Text>
               <Ionicons name="chevron-down" size={16} color={Colors.text} style={{ marginLeft: 4 }} />
             </TouchableOpacity>
           </View>
@@ -48,7 +51,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         {/* Greeting */}
-        <Text style={styles.greeting}>Hey Halal, <Text style={styles.greetingBold}>Good Afternoon!</Text></Text>
+        <Text style={styles.greeting}>Hey {user?.fullName?.split(' ')[0] || 'User'}, <Text style={styles.greetingBold}>Good Afternoon!</Text></Text>
 
         {/* Search */}
         <View style={styles.searchContainer}>
@@ -153,7 +156,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   addressContainer: {
+    flex: 1,
     alignItems: 'center',
+    marginHorizontal: 8,
   },
   deliverTo: {
     color: Colors.primary,
@@ -170,6 +175,7 @@ const styles = StyleSheet.create({
   addressText: {
     fontWeight: '600',
     color: Colors.text,
+    textAlign: 'center',
   },
   cartButton: {
     width: 45,

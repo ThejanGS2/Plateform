@@ -1,10 +1,47 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 
+import * as Location from 'expo-location';
+import { useStore } from '@/store/useStore';
+
 export default function LocationScreen({ navigation }: any) {
+  const [isLoading, setIsLoading] = React.useState(false);
+  const setCurrentAddress = useStore((state) => state.setCurrentAddress);
+
+  const handleAccessLocation = async () => {
+    setIsLoading(true);
+    try {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission denied', 'Allow location access to find restaurants near you');
+        setIsLoading(false);
+        return;
+      }
+
+      let location = await Location.getCurrentPositionAsync({});
+      let reverseResult = await Location.reverseGeocodeAsync({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+
+      if (reverseResult.length > 0) {
+        const addr = reverseResult[0];
+        // Use a more concise format to avoid overflowing header
+        const shortAddress = addr.street || addr.name || addr.city || 'Current Location';
+        setCurrentAddress(shortAddress);
+      }
+
+      navigation.navigate('Home');
+    } catch (error) {
+      Alert.alert('Error', 'Could not get your location');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.mapContainer}>
@@ -16,8 +53,12 @@ export default function LocationScreen({ navigation }: any) {
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.buttonText}>ACCESS LOCATION</Text>
+        <TouchableOpacity 
+          style={[styles.button, isLoading && { opacity: 0.7 }]} 
+          onPress={handleAccessLocation}
+          disabled={isLoading}
+        >
+          <Text style={styles.buttonText}>{isLoading ? 'SEARCHING...' : 'ACCESS LOCATION'}</Text>
           <View style={styles.iconCircle}>
             <Ionicons name="location-outline" size={16} color={Colors.white} />
           </View>

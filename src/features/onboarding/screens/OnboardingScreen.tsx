@@ -39,7 +39,7 @@ export default function OnboardingScreen({ navigation }: any) {
       flatListRef.current?.scrollToIndex({ index: currentIndex + 1 });
       setCurrentIndex(currentIndex + 1);
     } else {
-      navigation.navigate('Login');
+      navigation.navigate('SignUp');
     }
   };
 
@@ -91,7 +91,7 @@ export default function OnboardingScreen({ navigation }: any) {
         />
         
         {currentIndex !== DATA.length - 1 ? (
-          <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.skipButton}>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')} style={styles.skipButton}>
             <Text style={styles.skip}>Skip</Text>
           </TouchableOpacity>
         ) : (

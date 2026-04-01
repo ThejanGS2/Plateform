@@ -1,15 +1,50 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Colors } from '@/theme/colors';
 import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
 import { AuthHeader } from '../components/AuthHeader';
+
+const API_URL = 'http://192.168.8.111:5001/api'; // Changed to 5001 to avoid AirPlay conflict
 
 export default function SignUpScreen({ navigation }: any) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [retypePassword, setRetypePassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSignUp = async () => {
+    if (!name || !email || !password) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+    if (password !== retypePassword) {
+      Alert.alert('Error', 'Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigation.navigate('Verification', { email });
+      } else {
+        Alert.alert('Error', data.message || 'Registration failed');
+      }
+    } catch (error: any) {
+      Alert.alert('Connection Error', `Failed to connect to ${API_URL}. \n\nError: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -50,9 +85,17 @@ export default function SignUpScreen({ navigation }: any) {
 
         <AppButton 
           title="SIGN UP" 
-          onPress={() => navigation.navigate('Verification')} 
+          onPress={handleSignUp} 
+          loading={isLoading}
           style={{ marginTop: 24 }}
         />
+
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Already have an account? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+            <Text style={styles.loginText}>LOG IN</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScrollView>
   );
@@ -72,5 +115,18 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
+  },
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 24,
+    marginBottom: 40,
+  },
+  footerText: {
+    color: Colors.textSecondary,
+  },
+  loginText: {
+    color: Colors.primary,
+    fontWeight: 'bold',
   },
 });

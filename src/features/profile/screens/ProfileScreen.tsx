@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
+import { useStore } from '@/store/useStore';
 
 const MENU_GROUPS = [
   [
@@ -27,6 +28,8 @@ const MENU_GROUPS = [
 ];
 
 export default function ProfileScreen({ navigation }: any) {
+  const user = useStore((state) => state.user);
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -46,8 +49,8 @@ export default function ProfileScreen({ navigation }: any) {
         <View style={styles.profileSection}>
           <Image source={require('@/assets/images/avatar.png')} style={styles.avatar} />
           <View style={styles.profileTexts}>
-            <Text style={styles.name}>Vishal Khadok</Text>
-            <Text style={styles.bio}>I love fast food</Text>
+            <Text style={styles.name}>{user?.fullName || 'Vishal Khadok'}</Text>
+            <Text style={styles.bio}>{user?.email || 'I love fast food'}</Text>
           </View>
         </View>
 

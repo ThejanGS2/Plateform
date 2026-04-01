@@ -1,16 +1,54 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
 import { SocialLogin } from '@/components/SocialLogin';
 import { AuthHeader } from '../components/AuthHeader';
+import { useStore } from '@/store/useStore';
+
+const API_URL = 'http://192.168.8.111:5001/api';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please fill all fields');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        useStore.getState().setUser(data.user);
+        navigation.navigate('Location'); 
+      } else if (response.status === 401 && data.email) {
+        Alert.alert('Verification Required', 'Please verify your email first', [
+          { text: 'Verify Now', onPress: () => navigation.navigate('Verification', { email: data.email }) },
+          { text: 'Cancel' }
+        ]);
+      } else {
+        Alert.alert('Error', data.message || 'Login failed');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Connection failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -52,7 +90,7 @@ export default function LoginScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
 
-        <AppButton title="LOG IN" onPress={() => {}} />
+        <AppButton title="LOG IN" onPress={handleLogin} loading={isLoading} />
 
         <View style={styles.footer}>
           <Text style={styles.footerText}>Don't have an account? </Text>

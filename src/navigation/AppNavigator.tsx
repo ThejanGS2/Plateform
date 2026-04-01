@@ -7,6 +7,7 @@ import LoginScreen from '@/features/auth/screens/LoginScreen';
 import SignUpScreen from '@/features/auth/screens/SignUpScreen';
 import VerificationScreen from '@/features/auth/screens/VerificationScreen';
 import ForgotPasswordScreen from '@/features/auth/screens/ForgotPasswordScreen';
+import ResetPasswordScreen from '@/features/auth/screens/ResetPasswordScreen';
 import LocationScreen from '@/features/home/screens/LocationScreen';
 import HomeScreen from '@/features/home/screens/HomeScreen';
 import CategoriesScreen from '@/features/home/screens/CategoriesScreen';
@@ -49,6 +50,7 @@ export const AppNavigator = () => {
       <Stack.Screen name="SignUp" component={SignUpScreen} />
       <Stack.Screen name="Verification" component={VerificationScreen} />
       <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <Stack.Screen name="Location" component={LocationScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="Categories" component={CategoriesScreen} />

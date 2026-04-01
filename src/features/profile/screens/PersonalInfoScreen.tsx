@@ -1,11 +1,58 @@
-import React from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
+
+const API_URL = 'http://192.168.8.111:5001/api';
 
 export default function PersonalInfoScreen({ navigation }: any) {
+  const user = useStore((state) => state.user);
+  const setUser = useStore((state) => state.setUser);
+
+  const [fullName, setFullName] = useState(user?.fullName || '');
+  const [phone, setPhone] = useState(user?.phone || '');
+  const [bio, setBio] = useState(user?.bio || '');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSave = async () => {
+    if (!fullName) {
+      Alert.alert('Error', 'Full name is required');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/update-profile`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user.email,
+          fullName,
+          phone,
+          bio
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setUser(data.user);
+        Alert.alert('Success', 'Profile updated successfully', [
+          { text: 'OK', onPress: () => navigation.goBack() }
+        ]);
+      } else {
+        Alert.alert('Error', data.message || 'Failed to update profile');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Connection failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
@@ -33,24 +80,44 @@ export default function PersonalInfoScreen({ navigation }: any) {
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>FULL NAME</Text>
-              <TextInput style={styles.input} defaultValue="Vishal Khadok" placeholderTextColor={Colors.textSecondary} />
+              <TextInput 
+                style={styles.input} 
+                value={fullName} 
+                onChangeText={setFullName}
+                placeholder="Your full name"
+                placeholderTextColor={Colors.textSecondary} 
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>EMAIL</Text>
-              <TextInput style={styles.input} defaultValue="hello@halallab.co" keyboardType="email-address" autoCapitalize="none" placeholderTextColor={Colors.textSecondary} />
+              <TextInput 
+                style={[styles.input, { opacity: 0.6 }]} 
+                value={user?.email} 
+                editable={false}
+                placeholderTextColor={Colors.textSecondary} 
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>PHONE NUMBER</Text>
-              <TextInput style={styles.input} defaultValue="408-841-0926" keyboardType="phone-pad" placeholderTextColor={Colors.textSecondary} />
+              <TextInput 
+                style={styles.input} 
+                value={phone} 
+                onChangeText={setPhone}
+                placeholder="e.g. +1 234 567 890"
+                keyboardType="phone-pad" 
+                placeholderTextColor={Colors.textSecondary} 
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>BIO</Text>
               <TextInput 
                 style={[styles.input, styles.textArea]} 
-                defaultValue="I love fast food" 
+                value={bio} 
+                onChangeText={setBio}
+                placeholder="Tell us about yourself"
                 multiline 
                 numberOfLines={4}
                 textAlignVertical="top"
@@ -61,7 +128,7 @@ export default function PersonalInfoScreen({ navigation }: any) {
         </ScrollView>
 
         <View style={styles.footer}>
-          <AppButton title="SAVE" onPress={() => navigation.goBack()} />
+          <AppButton title="SAVE" onPress={handleSave} loading={isLoading} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

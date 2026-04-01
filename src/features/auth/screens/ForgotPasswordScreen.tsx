@@ -1,20 +1,50 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, Dimensions } from 'react-native';
+import { View, StyleSheet, Text, Dimensions, Alert } from 'react-native';
 import { Colors } from '@/theme/colors';
 import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
 import { AuthHeader } from '../components/AuthHeader';
 
 const { height } = Dimensions.get('window');
+const API_URL = 'http://192.168.8.111:5001/api';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSendCode = async () => {
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        navigation.navigate('Verification', { email, mode: 'resetPassword' });
+      } else {
+        Alert.alert('Error', data.message || 'Failed to send code');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Connection failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <AuthHeader
         title="Forgot Password"
-        subtitle="Please sign in to your existing account"
+        subtitle="Please enter your email to receive a reset code"
         onBack={() => navigation.goBack()}
       />
 
@@ -29,7 +59,8 @@ export default function ForgotPasswordScreen({ navigation }: any) {
 
         <AppButton
           title="SEND CODE"
-          onPress={() => navigation.navigate('Verification')}
+          onPress={handleSendCode}
+          loading={isLoading}
           style={{ marginTop: 24 }}
         />
       </View>

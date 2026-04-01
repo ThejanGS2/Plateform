@@ -4,8 +4,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
 
 export default function AddressesScreen({ navigation }: any) {
+  const currentAddress = useStore((state) => state.currentAddress);
   return (
     <SafeAreaView style={styles.container}>
       {/* Header */}
@@ -14,10 +16,24 @@ export default function AddressesScreen({ navigation }: any) {
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Address</Text>
-        <View style={{ width: 44 }} />
       </View>
-
+ 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+        {/* Current Location Card */}
+        <View style={[styles.addressCard, { borderLeftWidth: 4, borderLeftColor: Colors.primary }]}>
+          <View style={styles.iconContainer}>
+            <Ionicons name="location" size={24} color={Colors.primary} />
+          </View>
+          <View style={styles.cardInfo}>
+            <View style={styles.cardHeader}>
+              <Text style={styles.cardTitle}>CURRENT LOCATION</Text>
+              <View style={styles.cardActions}>
+                <Ionicons name="checkmark-circle" size={20} color={Colors.primary} />
+              </View>
+            </View>
+            <Text style={styles.cardAddress}>{currentAddress}</Text>
+          </View>
+        </View>
         {/* Address Card 1 */}
         <View style={styles.addressCard}>
           <View style={styles.iconContainer}>
