@@ -92,7 +92,10 @@ export const verifyEmail = async (req: Request, res: Response) => {
       user: {
         id: user._id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        phone: user.phone,
+        bio: user.bio,
+        avatarUrl: user.avatarUrl
       },
       token
     });
@@ -157,7 +160,10 @@ export const login = async (req: Request, res: Response) => {
       user: {
         id: user._id,
         fullName: user.fullName,
-        email: user.email
+        email: user.email,
+        phone: user.phone,
+        bio: user.bio,
+        avatarUrl: user.avatarUrl
       },
       token
     });
@@ -243,7 +249,7 @@ export const resetPassword = async (req: Request, res: Response) => {
 };
 
 export const updateProfile = async (req: Request, res: Response) => {
-  const { fullName, phone, bio, email } = req.body;
+  const { fullName, phone, bio, email, avatarUrl } = req.body;
   if (!email) return res.status(400).json({ message: 'Email is required' });
 
   console.log(`\n[UPDATE PROFILE] Updating profile for: ${email}`);
@@ -257,6 +263,7 @@ export const updateProfile = async (req: Request, res: Response) => {
     if (fullName !== undefined) user.fullName = fullName;
     if (phone !== undefined) user.phone = phone;
     if (bio !== undefined) user.bio = bio;
+    if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
 
     await user.save();
 

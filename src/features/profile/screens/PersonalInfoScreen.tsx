@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
 import { useStore } from '@/store/useStore';
+import { Avatar } from '@/components/Avatar';
+import * as ImagePicker from 'expo-image-picker';
 
 const API_URL = 'http://192.168.8.111:5001/api';
 
@@ -15,7 +17,27 @@ export default function PersonalInfoScreen({ navigation }: any) {
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [bio, setBio] = useState(user?.bio || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [isLoading, setIsLoading] = useState(false);
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Allow access to gallery to change your profile picture.');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
+
+    if (!result.canceled) {
+      setAvatarUrl(result.assets[0].uri);
+    }
+  };
 
   const handleSave = async () => {
     if (!fullName) {
@@ -32,7 +54,8 @@ export default function PersonalInfoScreen({ navigation }: any) {
           email: user.email,
           fullName,
           phone,
-          bio
+          bio,
+          avatarUrl
         }),
       });
 
@@ -69,8 +92,8 @@ export default function PersonalInfoScreen({ navigation }: any) {
           {/* Avatar Area */}
           <View style={styles.avatarContainer}>
             <View style={styles.avatarWrapper}>
-              <Image source={require('@/assets/images/avatar.png')} style={styles.avatar} />
-              <TouchableOpacity style={styles.editBadge}>
+              <Avatar uri={avatarUrl} name={fullName} size={100} />
+              <TouchableOpacity style={styles.editBadge} onPress={pickImage}>
                 <Ionicons name="pencil" size={14} color={Colors.white} />
               </TouchableOpacity>
             </View>

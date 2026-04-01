@@ -26,6 +26,13 @@ export default function HomeScreen({ navigation }: any) {
 
   const filteredFoods = AVAILABLE_FOODS.filter(food => activeCategory === 'All' || food.category === activeCategory);
 
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good Morning!';
+    if (hour < 17) return 'Good Afternoon!';
+    return 'Good Evening!';
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -51,7 +58,7 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         {/* Greeting */}
-        <Text style={styles.greeting}>Hey {user?.fullName?.split(' ')[0] || 'User'}, <Text style={styles.greetingBold}>Good Afternoon!</Text></Text>
+        <Text style={styles.greeting}>Hey {user?.fullName?.split(' ')[0] || 'User'}, <Text style={styles.greetingBold}>{getGreeting()}</Text></Text>
 
         {/* Search */}
         <View style={styles.searchContainer}>

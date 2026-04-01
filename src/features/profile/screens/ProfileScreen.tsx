@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { useStore } from '@/store/useStore';
+import { Avatar } from '@/components/Avatar';
 
 const MENU_GROUPS = [
   [
@@ -47,7 +48,7 @@ export default function ProfileScreen({ navigation }: any) {
 
         {/* Profile Info */}
         <View style={styles.profileSection}>
-          <Image source={require('@/assets/images/avatar.png')} style={styles.avatar} />
+          <Avatar uri={user?.avatarUrl} name={user?.fullName} size={80} style={{ marginRight: 16 }} />
           <View style={styles.profileTexts}>
             <Text style={styles.name}>{user?.fullName || 'Vishal Khadok'}</Text>
             <Text style={styles.bio}>{user?.email || 'I love fast food'}</Text>
