@@ -1,11 +1,59 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
+import { updateAddressApi } from '@/api/addressApi';
 
-export default function EditAddressScreen({ navigation }: any) {
-  const [label, setLabel] = useState('Home');
+export default function EditAddressScreen({ navigation, route }: any) {
+  const { address: initialAddress } = route.params || {};
+  console.log('Edit Screen: loaded address:', initialAddress);
+  
+  const [label, setLabel] = useState(initialAddress?.label || 'Home');
+  const [street, setStreet] = useState(initialAddress?.street || '');
+  const [city, setCity] = useState(initialAddress?.city || '');
+  const [postCode, setPostCode] = useState(initialAddress?.postCode || '');
+  const [apartment, setApartment] = useState(initialAddress?.apartment || '');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { token, setAddresses } = useStore();
+
+  useEffect(() => {
+    if (!initialAddress) {
+      Alert.alert('Error', 'No address data found');
+      navigation.goBack();
+    }
+  }, [initialAddress]);
+
+  const handleSave = async () => {
+    if (!street || !city) {
+      Alert.alert('Error', 'Please fill in required fields (Street and City)');
+      return;
+    }
+
+    if (!token) {
+      Alert.alert('Error', 'Session expired. Please log in again.');
+      return;
+    }
+
+    if (!initialAddress?._id) {
+      Alert.alert('Error', 'Invalid address ID');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const addressData = { label, street, city, postCode, apartment };
+      const updatedAddresses = await updateAddressApi(token, initialAddress._id, addressData);
+      setAddresses(updatedAddresses);
+      navigation.goBack();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update address');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -26,27 +74,51 @@ export default function EditAddressScreen({ navigation }: any) {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>ADDRESS</Text>
+              <Text style={styles.label}>CITY</Text>
               <View style={styles.addressInputContainer}>
                 <Ionicons name="location-sharp" size={20} color={Colors.textSecondary} style={styles.addressIcon} />
-                <TextInput style={styles.addressInput} defaultValue="2118 Thornridge Cir. Syracuse" placeholderTextColor={Colors.textSecondary} />
+                <TextInput 
+                  style={styles.addressInput} 
+                  value={city}
+                  onChangeText={setCity}
+                  placeholder="San Francisco" 
+                  placeholderTextColor={Colors.textSecondary} 
+                />
               </View>
             </View>
 
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
                 <Text style={styles.label}>STREET</Text>
-                <TextInput style={styles.input} defaultValue="Thornridge Cir." placeholderTextColor={Colors.textSecondary} />
+                <TextInput 
+                  style={styles.input} 
+                  value={street}
+                  onChangeText={setStreet}
+                  placeholder="Market St" 
+                  placeholderTextColor={Colors.textSecondary} 
+                />
               </View>
               <View style={[styles.inputGroup, { flex: 1 }]}>
                 <Text style={styles.label}>POST CODE</Text>
-                <TextInput style={styles.input} defaultValue="13204" placeholderTextColor={Colors.textSecondary} />
+                <TextInput 
+                  style={styles.input} 
+                  value={postCode}
+                  onChangeText={setPostCode}
+                  placeholder="13204" 
+                  placeholderTextColor={Colors.textSecondary} 
+                />
               </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>APPARTMENT</Text>
-              <TextInput style={styles.input} defaultValue="2118" placeholderTextColor={Colors.textSecondary} />
+              <TextInput 
+                style={styles.input} 
+                value={apartment}
+                onChangeText={setApartment}
+                placeholder="2118" 
+                placeholderTextColor={Colors.textSecondary} 
+              />
             </View>
 
             <View style={styles.inputGroup}>
@@ -67,7 +139,7 @@ export default function EditAddressScreen({ navigation }: any) {
           </ScrollView>
 
           <View style={styles.footer}>
-            <AppButton title="SAVE CHANGES" onPress={() => navigation.goBack()} />
+            <AppButton title="SAVE CHANGES" onPress={handleSave} loading={isLoading} />
           </View>
         </View>
       </KeyboardAvoidingView>

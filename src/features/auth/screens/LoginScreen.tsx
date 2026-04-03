@@ -8,7 +8,7 @@ import { SocialLogin } from '@/components/SocialLogin';
 import { AuthHeader } from '../components/AuthHeader';
 import { useStore } from '@/store/useStore';
 
-const API_URL = 'http://192.168.8.111:5001/api';
+const API_URL = 'http://172.20.10.2:5001/api';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -33,8 +33,10 @@ export default function LoginScreen({ navigation }: any) {
       const data = await response.json();
 
       if (response.ok) {
-        useStore.getState().setUser(data.user);
-        navigation.navigate('Location'); 
+        const store = useStore.getState();
+        store.setJustLoggedIn(data.user.role === 'customer');
+        store.setUser(data.user);
+        store.setToken(data.token);
       } else if (response.status === 401 && data.email) {
         Alert.alert('Verification Required', 'Please verify your email first', [
           { text: 'Verify Now', onPress: () => navigation.navigate('Verification', { email: data.email }) },

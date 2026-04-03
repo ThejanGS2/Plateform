@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { AuthRequest } from '../middleware/authMiddleware';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
@@ -11,7 +12,7 @@ const generateVerificationCode = () => {
 };
 
 export const register = async (req: Request, res: Response) => {
-  const { fullName, password, phone } = req.body;
+  const { fullName, password, phone, role } = req.body;
   const email = req.body.email.toLowerCase().trim();
   
   try {
@@ -46,6 +47,7 @@ export const register = async (req: Request, res: Response) => {
       email,
       password: hashedPassword,
       phone,
+      role: role || 'customer',
       isVerified: false,
       verificationCode
     });
@@ -95,7 +97,8 @@ export const verifyEmail = async (req: Request, res: Response) => {
         email: user.email,
         phone: user.phone,
         bio: user.bio,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        role: user.role
       },
       token
     });
@@ -163,7 +166,8 @@ export const login = async (req: Request, res: Response) => {
         email: user.email,
         phone: user.phone,
         bio: user.bio,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        role: user.role
       },
       token
     });
@@ -248,14 +252,18 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 };
 
-export const updateProfile = async (req: Request, res: Response) => {
-  const { fullName, phone, bio, email, avatarUrl } = req.body;
-  if (!email) return res.status(400).json({ message: 'Email is required' });
+export const updateProfile = async (req: AuthRequest, res: Response) => {
+  const { fullName, phone, bio, avatarUrl } = req.body;
+  const userId = req.user?.id;
 
-  console.log(`\n[UPDATE PROFILE] Updating profile for: ${email}`);
+  if (!userId) {
+    return res.status(401).json({ message: 'User not authenticated' });
+  }
+
+  console.log(`\n[UPDATE PROFILE] Updating profile for user ID: ${userId}`);
 
   try {
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
@@ -275,7 +283,8 @@ export const updateProfile = async (req: Request, res: Response) => {
         email: user.email,
         phone: user.phone,
         bio: user.bio,
-        avatarUrl: user.avatarUrl
+        avatarUrl: user.avatarUrl,
+        role: user.role
       }
     });
   } catch (error) {

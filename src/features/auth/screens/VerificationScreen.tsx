@@ -5,7 +5,7 @@ import { AppButton } from '@/components/AppButton';
 import { AuthHeader } from '../components/AuthHeader';
 import { useStore } from '@/store/useStore';
 
-const API_URL = 'http://192.168.8.111:5001/api';
+const API_URL = 'http://172.20.10.2:5001/api';
 
 export default function VerificationScreen({ navigation, route }: any) {
   const { email = 'example@gmail.com', mode } = route.params || {};
@@ -71,7 +71,16 @@ export default function VerificationScreen({ navigation, route }: any) {
           navigation.navigate('ResetPassword', { email, code });
         } else {
           Alert.alert('Success', 'Email verified successfully!', [
-            { text: 'OK', onPress: () => navigation.navigate('Location') }
+            { 
+              text: 'OK', 
+              onPress: () => {
+                const role = data.user?.role;
+                if (role === 'admin') navigation.replace('AdminHome');
+                else if (role === 'chef') navigation.replace('ChefHome');
+                else if (role === 'driver') navigation.replace('DriverHome');
+                else navigation.replace('Location');
+              } 
+            }
           ]);
         }
       } else {

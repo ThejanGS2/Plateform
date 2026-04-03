@@ -8,7 +8,7 @@ import { useStore } from '@/store/useStore';
 import { Avatar } from '@/components/Avatar';
 import * as ImagePicker from 'expo-image-picker';
 
-const API_URL = 'http://192.168.8.111:5001/api';
+const API_URL = 'http://172.20.10.2:5001/api';
 
 export default function PersonalInfoScreen({ navigation }: any) {
   const user = useStore((state) => state.user);

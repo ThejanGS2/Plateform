@@ -10,6 +10,22 @@ import { useStore } from '@/store/useStore';
 export default function LocationScreen({ navigation }: any) {
   const [isLoading, setIsLoading] = React.useState(false);
   const setCurrentAddress = useStore((state) => state.setCurrentAddress);
+  const setJustLoggedIn = useStore((state) => state.setJustLoggedIn);
+
+  React.useEffect(() => {
+    // Reset the flag so auto-login doesn't trigger this again
+    setJustLoggedIn(false);
+    
+    // Attempt auto-detection if permissions are already granted
+    checkExistingPermission();
+  }, []);
+
+  const checkExistingPermission = async () => {
+    const { status } = await Location.getForegroundPermissionsAsync();
+    if (status === 'granted') {
+      handleAccessLocation();
+    }
+  };
 
   const handleAccessLocation = async () => {
     setIsLoading(true);

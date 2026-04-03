@@ -5,6 +5,10 @@ import connectDB from './config/db';
 import authRoutes from './routes/authRoutes';
 import foodRoutes from './routes/foodRoutes';
 import orderRoutes from './routes/orderRoutes';
+import userRoutes from './routes/userRoutes';
+import cartRoutes from './routes/cartRoutes';
+import favoriteRoutes from './routes/favoriteRoutes';
+import notificationRoutes from './routes/notificationRoutes';
 
 dotenv.config({ override: true });
 
@@ -30,7 +34,11 @@ app.use((req, res, next) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api', foodRoutes);
-app.use('/api', orderRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 import mongoose from 'mongoose';
 

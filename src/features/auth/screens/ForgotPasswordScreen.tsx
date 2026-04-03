@@ -6,7 +6,7 @@ import { AppButton } from '@/components/AppButton';
 import { AuthHeader } from '../components/AuthHeader';
 
 const { height } = Dimensions.get('window');
-const API_URL = 'http://192.168.8.111:5001/api';
+const API_URL = 'http://172.20.10.2:5001/api';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');

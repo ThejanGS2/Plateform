@@ -22,6 +22,9 @@ import AddCardScreen from '@/features/profile/screens/AddCardScreen';
 import PaymentSuccessScreen from '@/features/profile/screens/PaymentSuccessScreen';
 import EditAddressScreen from '@/features/profile/screens/EditAddressScreen';
 import PaymentBreakdownScreen from '@/features/cart/screens/PaymentBreakdownScreen';
+import AdminHomeScreen from '@/features/admin/screens/AdminHomeScreen';
+import ChefHomeScreen from '@/features/chef/screens/ChefHomeScreen';
+import DriverHomeScreen from '@/features/driver/screens/DriverHomeScreen';
 
 // Sub-screens
 import PersonalInfoScreen from '@/features/profile/screens/PersonalInfoScreen';
@@ -34,48 +37,78 @@ import FAQsScreen from '@/features/profile/screens/FAQsScreen';
 import UserReviewsScreen from '@/features/profile/screens/UserReviewsScreen';
 import SettingsScreen from '@/features/profile/screens/SettingsScreen';
 
+import { useStore } from '@/store/useStore';
+
 const Stack = createNativeStackNavigator();
 
 export const AppNavigator = () => {
+  const { token, user, currentAddress, justLoggedIn } = useStore();
+
   return (
     <Stack.Navigator
-      initialRouteName="Splash"
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Splash" component={SplashScreen} />
-      <Stack.Screen name="Onboarding" component={OnboardingScreen} />
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="SignUp" component={SignUpScreen} />
-      <Stack.Screen name="Verification" component={VerificationScreen} />
-      <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-      <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
-      <Stack.Screen name="Location" component={LocationScreen} />
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="Categories" component={CategoriesScreen} />
-      <Stack.Screen name="CategoryDetails" component={CategoryDetailsScreen} />
-      <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
-      <Stack.Screen name="OrderTracker" component={OrderTrackerScreen} />
-      <Stack.Screen name="RateFood" component={RateFoodScreen} />
-      <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
-      <Stack.Screen name="Profile" component={ProfileScreen} />
-      <Stack.Screen name="AddNewAddress" component={AddNewAddressScreen} />
-      <Stack.Screen name="EditAddress" component={EditAddressScreen} />
-      <Stack.Screen name="AddCard" component={AddCardScreen} />
-      <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
-      <Stack.Screen name="PaymentBreakdown" component={PaymentBreakdownScreen} />
-      
-      {/* Profile menu screens */}
-      <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
-      <Stack.Screen name="Addresses" component={AddressesScreen} />
-      <Stack.Screen name="Cart" component={CartScreen} />
-      <Stack.Screen name="Favourite" component={FavouriteScreen} />
-      <Stack.Screen name="Notifications" component={NotificationsScreen} />
-      <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
-      <Stack.Screen name="FAQs" component={FAQsScreen} />
-      <Stack.Screen name="UserReviews" component={UserReviewsScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
+      {!token ? (
+        <>
+          <Stack.Screen name="Splash" component={SplashScreen} />
+          <Stack.Screen name="Onboarding" component={OnboardingScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="SignUp" component={SignUpScreen} />
+          <Stack.Screen name="Verification" component={VerificationScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+          <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
+        </>
+      ) : (
+        <>
+          {/* Main App Stack after Login */}
+          {user?.role === 'admin' ? (
+            <Stack.Screen name="AdminHome" component={AdminHomeScreen} />
+          ) : user?.role === 'chef' ? (
+            <Stack.Screen name="ChefHome" component={ChefHomeScreen} />
+          ) : user?.role === 'driver' ? (
+            <Stack.Screen name="DriverHome" component={DriverHomeScreen} />
+          ) : (
+            <>
+              {justLoggedIn ? (
+                <>
+                  <Stack.Screen name="Location" component={LocationScreen} />
+                  <Stack.Screen name="Home" component={HomeScreen} />
+                </>
+              ) : (
+                <>
+                  <Stack.Screen name="Home" component={HomeScreen} />
+                  <Stack.Screen name="Location" component={LocationScreen} />
+                </>
+              )}
+            </>
+          )}
+
+          <Stack.Screen name="Categories" component={CategoriesScreen} />
+          <Stack.Screen name="CategoryDetails" component={CategoryDetailsScreen} />
+          <Stack.Screen name="FoodDetails" component={FoodDetailsScreen} />
+          <Stack.Screen name="OrderTracker" component={OrderTrackerScreen} />
+          <Stack.Screen name="RateFood" component={RateFoodScreen} />
+          <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="AddNewAddress" component={AddNewAddressScreen} />
+          <Stack.Screen name="EditAddress" component={EditAddressScreen} />
+          <Stack.Screen name="AddCard" component={AddCardScreen} />
+          <Stack.Screen name="PaymentBreakdown" component={PaymentBreakdownScreen} />
+          
+          {/* Profile menu screens */}
+          <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+          <Stack.Screen name="Addresses" component={AddressesScreen} />
+          <Stack.Screen name="Cart" component={CartScreen} />
+          <Stack.Screen name="Favourite" component={FavouriteScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="PaymentMethod" component={PaymentMethodScreen} />
+          <Stack.Screen name="FAQs" component={FAQsScreen} />
+          <Stack.Screen name="UserReviews" component={UserReviewsScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </>
+      )}
     </Stack.Navigator>
   );
 };

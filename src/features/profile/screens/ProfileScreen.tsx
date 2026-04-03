@@ -59,7 +59,17 @@ export default function ProfileScreen({ navigation }: any) {
         {MENU_GROUPS.map((group, groupIndex) => (
           <View key={groupIndex} style={styles.menuGroup}>
             {group.map((item) => (
-              <TouchableOpacity key={item.id} style={styles.menuItem} onPress={() => navigation.navigate(item.route)}>
+              <TouchableOpacity 
+                key={item.id} 
+                style={styles.menuItem} 
+                onPress={() => {
+                  if (item.title === 'Log Out') {
+                    useStore.getState().logout();
+                  } else {
+                    navigation.navigate(item.route, item.route === 'PaymentMethod' ? { mode: 'manage' } : undefined);
+                  }
+                }}
+              >
                 <View style={styles.menuItemLeft}>
                   <View style={styles.iconCircle}>
                     <Ionicons name={item.icon as any} size={20} color={item.color} />

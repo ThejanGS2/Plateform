@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
+import { removePaymentMethodApi } from '@/api/paymentApi';
 
 const CashLogo = () => (
   <View style={{ width: 48, height: 32, borderRadius: 6, borderWidth: 3, borderColor: '#FF7A28', justifyContent: 'center', alignItems: 'center' }}>
@@ -35,15 +37,77 @@ const PaypalLogo = () => (
   </View>
 );
 
-const PAYMENT_METHODS = [
-  { id: '1', name: 'Cash' },
-  { id: '2', name: 'Visa' },
-  { id: '3', name: 'Mastercard' },
-  { id: '4', name: 'Paypal' },
-];
+export default function PaymentMethodScreen({ navigation, route }: any) {
+  const { token, paymentMethods, loadPaymentMethods, setPaymentMethods } = useStore();
+  const isManageMode = route.params?.mode === 'manage';
+  const [selectedMethodId, setSelectedMethodId] = useState(isManageMode ? (paymentMethods[0]?._id || '') : 'cash');
 
-export default function PaymentMethodScreen({ navigation }: any) {
-  const [selectedMethod, setSelectedMethod] = useState('3');
+  useEffect(() => {
+    const fetchMethods = async () => {
+      await loadPaymentMethods();
+    };
+    fetchMethods();
+  }, []);
+
+  useEffect(() => {
+    if (isManageMode && paymentMethods.length > 0 && !selectedMethodId) {
+      setSelectedMethodId(paymentMethods[0]._id);
+    }
+  }, [paymentMethods, isManageMode]);
+
+  const handleDelete = (id: string) => {
+    Alert.alert('Remove Card', 'Are you sure you want to remove this payment method?', [
+      { text: 'Cancel', style: 'cancel' },
+      { 
+        text: 'Remove', 
+        style: 'destructive',
+        onPress: async () => {
+          if (!token) return;
+          try {
+            const updatedMethods = await removePaymentMethodApi(token, id);
+            setPaymentMethods(updatedMethods);
+            if (selectedMethodId === id) setSelectedMethodId('cash');
+          } catch (error) {
+            Alert.alert('Error', 'Failed to remove card');
+          }
+        }
+      }
+    ]);
+  };
+  const handleCardActions = () => {
+    if (selectedMethodId === 'cash' || selectedMethodId === 'paypal') {
+      Alert.alert('Payment Method', `This is your ${selectedMethodId === 'cash' ? 'Cash' : 'PayPal'} option.`);
+      return;
+    }
+
+    const method = paymentMethods.find(m => m._id === selectedMethodId);
+    if (!method) return;
+
+    Alert.alert(
+      'Card Options',
+      'Choose an action for this card',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'View Details',
+          onPress: () => {
+            Alert.alert(
+              'Card Details',
+              `Holder: ${method.cardHolder}\nNumber: •••• •••• •••• ${method.cardNumber.slice(-4)}\nExpiry: ${method.expiryDate}`
+            );
+          }
+        },
+        { 
+          text: 'Delete Card', 
+          style: 'destructive', 
+          onPress: () => handleDelete(selectedMethodId) 
+        }
+      ]
+    );
+  };
+
+  const selectedMethod = paymentMethods.find(m => m._id === selectedMethodId) || 
+                         { _id: 'cash', cardType: 'Cash', cardNumber: 'Pay on delivery' };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -52,7 +116,7 @@ export default function PaymentMethodScreen({ navigation }: any) {
         <TouchableOpacity style={styles.iconButton} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={24} color={Colors.text} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Payment</Text>
+        <Text style={styles.headerTitle}>{isManageMode ? 'Manage Cards' : 'Payment'}</Text>
         <View style={{ width: 44 }} />
       </View>
 
@@ -60,19 +124,38 @@ export default function PaymentMethodScreen({ navigation }: any) {
         
         {/* Horizontal Payment Selection */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.methodScroll} contentContainerStyle={styles.methodScrollContent}>
-          {PAYMENT_METHODS.map(method => {
-            const isSelected = selectedMethod === method.id;
+          
+          {!isManageMode && (
+            <View style={styles.methodWrapper}>
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity 
+                  style={[styles.methodCard, selectedMethodId === 'cash' && styles.methodCardActive]}
+                  onPress={() => setSelectedMethodId('cash')}
+                >
+                  <CashLogo />
+                </TouchableOpacity>
+                {selectedMethodId === 'cash' && (
+                  <View style={styles.checkBadge}>
+                    <Ionicons name="checkmark" size={14} color={Colors.white} />
+                  </View>
+                )}
+              </View>
+              <Text style={styles.methodName}>Cash</Text>
+            </View>
+          )}
+
+          {/* Dynamic: Saved Cards */}
+          {paymentMethods.map(method => {
+            const isSelected = selectedMethodId === method._id;
             return (
-              <View key={method.id} style={styles.methodWrapper}>
+              <View key={method._id} style={styles.methodWrapper}>
                 <View style={{ position: 'relative' }}>
                   <TouchableOpacity 
                     style={[styles.methodCard, isSelected && styles.methodCardActive]}
-                    onPress={() => setSelectedMethod(method.id)}
+                    onPress={() => setSelectedMethodId(method._id)}
+                    onLongPress={() => handleDelete(method._id)}
                   >
-                    {method.id === '1' && <CashLogo />}
-                    {method.id === '2' && <VisaLogo />}
-                    {method.id === '3' && <MastercardLogo />}
-                    {method.id === '4' && <PaypalLogo />}
+                    {method.cardType === 'Visa' ? <VisaLogo /> : <MastercardLogo />}
                   </TouchableOpacity>
                   
                   {isSelected && (
@@ -81,22 +164,63 @@ export default function PaymentMethodScreen({ navigation }: any) {
                     </View>
                   )}
                 </View>
-                <Text style={styles.methodName}>{method.name}</Text>
+                <Text style={styles.methodName}>{method.cardType}</Text>
               </View>
             );
           })}
+
+          {!isManageMode && (
+            <View style={styles.methodWrapper}>
+              <View style={{ position: 'relative' }}>
+                <TouchableOpacity 
+                  style={[styles.methodCard, selectedMethodId === 'paypal' && styles.methodCardActive]}
+                  onPress={() => setSelectedMethodId('paypal')}
+                >
+                  <PaypalLogo />
+                </TouchableOpacity>
+                {selectedMethodId === 'paypal' && (
+                  <View style={styles.checkBadge}>
+                    <Ionicons name="checkmark" size={14} color={Colors.white} />
+                  </View>
+                )}
+              </View>
+              <Text style={styles.methodName}>Paypal</Text>
+            </View>
+          )}
+
         </ScrollView>
 
         {/* Selected Card UI */}
         <View style={styles.cardInfoBox}>
           <View style={styles.cardInfoLeft}>
-            <Text style={styles.cardInfoTitle}>Master Card</Text>
+            <Text style={styles.cardInfoTitle}>
+              {selectedMethodId === 'cash' ? 'Cash on Delivery' : 
+               selectedMethodId === 'paypal' ? 'PayPal Account' : 
+               (selectedMethod as any).cardType || 'Credit Card'}
+            </Text>
             <View style={styles.cardNumberContainer}>
-              <FontAwesome5 name="cc-mastercard" size={20} color="#EB001B" style={{marginRight: 8}} />
-              <Text style={styles.cardNumber}>•••• •••• •••• 436</Text>
+              {selectedMethodId === 'cash' ? (
+                 <Ionicons name="cash" size={20} color="#FF7A28" style={{marginRight: 8}} />
+              ) : selectedMethodId === 'paypal' ? (
+                <Ionicons name="logo-paypal" size={20} color="#003087" style={{marginRight: 8}} />
+              ) : (
+                <FontAwesome5 
+                  name={(selectedMethod as any).cardType === 'Visa' ? 'cc-visa' : 'cc-mastercard'} 
+                  size={20} 
+                  color={(selectedMethod as any).cardType === 'Visa' ? '#1A1F71' : '#EB001B'} 
+                  style={{marginRight: 8}} 
+                />
+              )}
+              <Text style={styles.cardNumber}>
+                {selectedMethodId === 'cash' ? 'Pay when you receive' : 
+                 selectedMethodId === 'paypal' ? 'vishal@khadok.com' : 
+                 `•••• •••• •••• ${(selectedMethod as any).cardNumber?.slice(-4) || 'XXXX'}`}
+              </Text>
             </View>
           </View>
-          <Ionicons name="chevron-down" size={20} color={Colors.textSecondary} />
+          <TouchableOpacity onPress={handleCardActions} style={{ padding: 4 }}>
+            <Ionicons name="chevron-down" size={20} color={Colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         {/* Add New Button */}
@@ -107,14 +231,16 @@ export default function PaymentMethodScreen({ navigation }: any) {
 
       </ScrollView>
 
-      {/* Footer Area */}
-      <View style={styles.footer}>
-        <View style={styles.totalRow}>
-          <Text style={styles.totalLabel}>TOTAL:</Text>
-          <Text style={styles.totalValue}>$96</Text>
+      {/* Footer Area - Only show in checkout mode */}
+      {!isManageMode && (
+        <View style={styles.footer}>
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>TOTAL:</Text>
+            <Text style={styles.totalValue}>$96</Text>
+          </View>
+          <AppButton title="PAY & CONFIRM" onPress={() => navigation.navigate('PaymentSuccess')} />
         </View>
-        <AppButton title="PAY & CONFIRM" onPress={() => navigation.navigate('PaymentSuccess')} />
-      </View>
+      )}
     </SafeAreaView>
   );
 }

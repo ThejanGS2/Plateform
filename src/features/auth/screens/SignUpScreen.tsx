@@ -5,7 +5,7 @@ import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
 import { AuthHeader } from '../components/AuthHeader';
 
-const API_URL = 'http://192.168.8.111:5001/api'; // Changed to 5001 to avoid AirPlay conflict
+const API_URL = 'http://172.20.10.2:5001/api'; // Changed to 5001 to avoid AirPlay conflict
 
 export default function SignUpScreen({ navigation }: any) {
   const [name, setName] = useState('');

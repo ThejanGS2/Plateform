@@ -1,12 +1,56 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, Text, ScrollView, TouchableOpacity, Image, TextInput, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
+import { addAddressApi } from '@/api/addressApi';
 
 export default function AddNewAddressScreen({ navigation }: any) {
   const [label, setLabel] = useState('Home');
+  const [street, setStreet] = useState('');
+  const [city, setCity] = useState('');
+  const [postCode, setPostCode] = useState('');
+  const [apartment, setApartment] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { token, setAddresses } = useStore();
+
+  const handleSave = async () => {
+    console.log('SAVE pressed. Token:', token ? 'Exists' : 'MISSING');
+    if (!street || !city) {
+      Alert.alert('Error', 'Please fill in Street and City');
+      return;
+    }
+
+    if (!token) {
+      Alert.alert('Error', 'Session expired. Please log in again.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const addressData = {
+        label,
+        street,
+        city,
+        postCode,
+        apartment,
+        isDefault: false
+      };
+      console.log('Sending address data:', addressData);
+      const updatedAddresses = await addAddressApi(token, addressData);
+      console.log('Update success! New address count:', updatedAddresses.length);
+      setAddresses(updatedAddresses);
+      navigation.goBack();
+    } catch (error: any) {
+      console.error('Save address error:', error);
+      Alert.alert('Error', `Failed to save address: ${error.message || 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -28,27 +72,51 @@ export default function AddNewAddressScreen({ navigation }: any) {
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>ADDRESS</Text>
+              <Text style={styles.label}>CITY</Text>
               <View style={styles.addressInputContainer}>
                 <Ionicons name="location-sharp" size={20} color={Colors.textSecondary} style={styles.addressIcon} />
-                <TextInput style={styles.addressInput} defaultValue="3235 Royal Ln. Mesa, New Jersy 34567" placeholderTextColor={Colors.textSecondary} />
+                <TextInput 
+                  style={styles.addressInput} 
+                  placeholder="San Francisco" 
+                  value={city}
+                  onChangeText={setCity}
+                  placeholderTextColor={Colors.textSecondary} 
+                />
               </View>
             </View>
 
             <View style={styles.row}>
               <View style={[styles.inputGroup, { flex: 1, marginRight: 12 }]}>
                 <Text style={styles.label}>STREET</Text>
-                <TextInput style={styles.input} defaultValue="Hason Nagar" placeholderTextColor={Colors.textSecondary} />
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="Market St" 
+                  value={street}
+                  onChangeText={setStreet}
+                  placeholderTextColor={Colors.textSecondary} 
+                />
               </View>
               <View style={[styles.inputGroup, { flex: 1 }]}>
                 <Text style={styles.label}>POST CODE</Text>
-                <TextInput style={styles.input} defaultValue="34567" placeholderTextColor={Colors.textSecondary} />
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="94103" 
+                  value={postCode}
+                  onChangeText={setPostCode}
+                  placeholderTextColor={Colors.textSecondary} 
+                />
               </View>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>APPARTMENT</Text>
-              <TextInput style={styles.input} defaultValue="345" placeholderTextColor={Colors.textSecondary} />
+              <TextInput 
+                style={styles.input} 
+                placeholder="Apt 123" 
+                value={apartment}
+                onChangeText={setApartment}
+                placeholderTextColor={Colors.textSecondary} 
+              />
             </View>
 
             <View style={styles.inputGroup}>
@@ -69,7 +137,7 @@ export default function AddNewAddressScreen({ navigation }: any) {
           </ScrollView>
 
           <View style={styles.footer}>
-            <AppButton title="SAVE LOCATION" onPress={() => navigation.goBack()} />
+            <AppButton title="SAVE LOCATION" onPress={handleSave} loading={isLoading} />
           </View>
         </View>
       </KeyboardAvoidingView>
