@@ -14,7 +14,7 @@ const generateVerificationCode = () => {
 export const register = async (req: Request, res: Response) => {
   const { fullName, password, phone, role } = req.body;
   const email = req.body.email.toLowerCase().trim();
-  
+
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -25,23 +25,23 @@ export const register = async (req: Request, res: Response) => {
         const newCode = generateVerificationCode();
         userExists.verificationCode = newCode;
         await userExists.save();
-        
+
         await sendEmail(
           email,
           'Verify your Plateform account (New Code)',
           `Your new verification code is: ${newCode}`
         );
-        
-        return res.status(200).json({ 
-          message: 'Account already exists but not verified. A new code has been sent.', 
-          email: userExists.email 
+
+        return res.status(200).json({
+          message: 'Account already exists but not verified. A new code has been sent.',
+          email: userExists.email
         });
       }
     }
 
     const verificationCode = generateVerificationCode();
     const hashedPassword = await bcrypt.hash(password, 10);
-    
+
     const newUser = await User.create({
       fullName,
       email,

@@ -8,7 +8,7 @@ import { SocialLogin } from '@/components/SocialLogin';
 import { AuthHeader } from '../components/AuthHeader';
 import { useStore } from '@/store/useStore';
 
-const API_URL = 'http://172.20.10.2:5001/api';
+import { API_BASE_URL as API_URL } from '@/api/config';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -54,31 +54,31 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <AuthHeader 
-        title="Log In" 
-        subtitle="Please sign in to your existing account" 
-        onBack={() => navigation.goBack()} 
+      <AuthHeader
+        title="Log In"
+        subtitle="Please sign in to your existing account"
+        onBack={() => navigation.goBack()}
       />
-      
+
       <View style={styles.form}>
-        <AppInput 
-          label="EMAIL" 
-          placeholder="example@gmail.com" 
-          value={email} 
-          onChangeText={setEmail} 
+        <AppInput
+          label="EMAIL"
+          placeholder="example@gmail.com"
+          value={email}
+          onChangeText={setEmail}
           keyboardType="email-address"
         />
-        <AppInput 
-          label="PASSWORD" 
-          placeholder="********" 
-          value={password} 
-          onChangeText={setPassword} 
+        <AppInput
+          label="PASSWORD"
+          placeholder="********"
+          value={password}
+          onChangeText={setPassword}
           secureTextEntry
         />
 
         <View style={styles.row}>
-          <TouchableOpacity 
-            style={styles.rememberRow} 
+          <TouchableOpacity
+            style={styles.rememberRow}
             onPress={() => setRememberMe(!rememberMe)}
           >
             <View style={[styles.checkbox, rememberMe && styles.checkboxActive]}>

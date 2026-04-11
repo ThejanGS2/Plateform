@@ -80,11 +80,13 @@ export const updateAddress = async (req: AuthRequest, res: Response) => {
   }
 };
 
+import PaymentMethod from '../models/PaymentMethod';
+
 // Payment Methods
 export const getPaymentMethods = async (req: AuthRequest, res: Response) => {
   try {
-    const user = await User.findById(req.user?.id).select('paymentMethods');
-    res.json(user?.paymentMethods || []);
+    const methods = await PaymentMethod.find({ userId: req.user?.id });
+    res.json(methods);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
@@ -93,30 +95,37 @@ export const getPaymentMethods = async (req: AuthRequest, res: Response) => {
 export const addPaymentMethod = async (req: AuthRequest, res: Response) => {
   const { cardHolder, cardNumber, expiryDate, cardType, isDefault, cvc } = req.body;
   try {
-    const user = await User.findById(req.user?.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
     if (isDefault) {
-      user.paymentMethods.forEach(pm => pm.isDefault = false);
+      await PaymentMethod.updateMany({ userId: req.user?.id }, { isDefault: false });
     }
 
-    user.paymentMethods.push({ cardHolder, cardNumber, expiryDate, cardType, isDefault, cvc });
-    await user.save();
-    res.status(201).json(user.paymentMethods);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    const newMethod = new PaymentMethod({
+      userId: req.user?.id,
+      cardHolder,
+      cardNumber,
+      expiryDate,
+      cardType,
+      cvc,
+      isDefault
+    });
+
+    await newMethod.save();
+    const updatedMethods = await PaymentMethod.find({ userId: req.user?.id });
+    res.status(201).json(updatedMethods);
+  } catch (error: any) {
+    res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
 
 export const removePaymentMethod = async (req: AuthRequest, res: Response) => {
   const { paymentMethodId } = req.params;
   try {
-    const user = await User.findById(req.user?.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const method = await PaymentMethod.findOne({ _id: paymentMethodId, userId: req.user?.id });
+    if (!method) return res.status(404).json({ message: 'Payment method not found' });
 
-    user.paymentMethods = user.paymentMethods.filter(pm => (pm as any)._id.toString() !== paymentMethodId);
-    await user.save();
-    res.json(user.paymentMethods);
+    await PaymentMethod.deleteOne({ _id: paymentMethodId });
+    const updatedMethods = await PaymentMethod.find({ userId: req.user?.id });
+    res.json(updatedMethods);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

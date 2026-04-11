@@ -9,15 +9,6 @@ export interface IAddress {
   isDefault: boolean;
 }
 
-export interface IPaymentMethod {
-  cardHolder: string;
-  cardNumber: string; // Masked or partial
-  expiryDate: string;
-  cardType: string;
-  cvc: string;
-  isDefault: boolean;
-}
-
 export interface IUser extends Document {
   fullName: string;
   email: string;
@@ -29,7 +20,6 @@ export interface IUser extends Document {
   isVerified: boolean;
   verificationCode?: string;
   addresses: IAddress[];
-  paymentMethods: IPaymentMethod[];
   createdAt: Date;
 }
 
@@ -39,15 +29,6 @@ const AddressSchema = new Schema({
   city: { type: String },
   postCode: { type: String },
   apartment: { type: String },
-  isDefault: { type: Boolean, default: false }
-});
-
-const PaymentMethodSchema = new Schema({
-  cardHolder: { type: String },
-  cardNumber: { type: String },
-  expiryDate: { type: String },
-  cardType: { type: String },
-  cvc: { type: String },
   isDefault: { type: Boolean, default: false }
 });
 
@@ -62,7 +43,6 @@ const UserSchema: Schema = new Schema({
   isVerified: { type: Boolean, default: false },
   verificationCode: { type: String },
   addresses: [AddressSchema],
-  paymentMethods: [PaymentMethodSchema],
   createdAt: { type: Date, default: Date.now }
 });
 

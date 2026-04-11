@@ -15,17 +15,8 @@ export default function LocationScreen({ navigation }: any) {
   React.useEffect(() => {
     // Reset the flag so auto-login doesn't trigger this again
     setJustLoggedIn(false);
-    
-    // Attempt auto-detection if permissions are already granted
-    checkExistingPermission();
   }, []);
 
-  const checkExistingPermission = async () => {
-    const { status } = await Location.getForegroundPermissionsAsync();
-    if (status === 'granted') {
-      handleAccessLocation();
-    }
-  };
 
   const handleAccessLocation = async () => {
     setIsLoading(true);

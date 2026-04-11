@@ -1,0 +1,364 @@
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Pressable,
+  Image,
+  StatusBar,
+  Alert,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+
+const ORANGE = '#FF7A28';
+const NAVY = '#1C1C2E';
+const WHITE = '#FFFFFF';
+const GREY = '#9E9E9E';
+
+type Category = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
+
+interface FoodItem {
+  id: string;
+  name: string;
+  category: Category;
+  price: number;
+  rating: number;
+  reviews: number;
+  pickupType: string;
+  image: string;
+}
+
+const ALL_ITEMS: FoodItem[] = [
+  {
+    id: '1',
+    name: 'Chicken Thai Biriyani',
+    category: 'Breakfast',
+    price: 60,
+    rating: 4.9,
+    reviews: 10,
+    pickupType: 'Pick UP',
+    image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80',
+  },
+  {
+    id: '2',
+    name: 'Chicken Bhuna',
+    category: 'Breakfast',
+    price: 30,
+    rating: 4.9,
+    reviews: 10,
+    pickupType: 'Pick UP',
+    image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200&q=80',
+  },
+  {
+    id: '3',
+    name: 'Mazalichiken Halim',
+    category: 'Breakfast',
+    price: 25,
+    rating: 4.9,
+    reviews: 10,
+    pickupType: 'Pick UP',
+    image: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=200&q=80',
+  },
+  {
+    id: '4',
+    name: 'Grilled Salmon',
+    category: 'Lunch',
+    price: 55,
+    rating: 4.8,
+    reviews: 23,
+    pickupType: 'Delivery',
+    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&q=80',
+  },
+  {
+    id: '5',
+    name: 'Caesar Salad',
+    category: 'Lunch',
+    price: 22,
+    rating: 4.7,
+    reviews: 15,
+    pickupType: 'Pick UP',
+    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80',
+  },
+  {
+    id: '6',
+    name: 'Pasta Carbonara',
+    category: 'Dinner',
+    price: 40,
+    rating: 4.9,
+    reviews: 31,
+    pickupType: 'Delivery',
+    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=200&q=80',
+  },
+  {
+    id: '7',
+    name: 'Butter Garlic Prawns',
+    category: 'Dinner',
+    price: 70,
+    rating: 4.8,
+    reviews: 18,
+    pickupType: 'Pick UP',
+    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=200&q=80',
+  },
+];
+
+const CATEGORIES: Category[] = ['All', 'Breakfast', 'Lunch', 'Dinner'];
+
+export default function ChefFoodListScreen({ navigation }: any) {
+  const [selectedCategory, setSelectedCategory] = useState<Category>('All');
+  const [activeNavTab, setActiveNavTab] = useState(4);
+
+  const filtered =
+    selectedCategory === 'All'
+      ? ALL_ITEMS
+      : ALL_ITEMS.filter((i) => i.category === selectedCategory);
+
+  const goToDetails = (item: FoodItem) => {
+    try {
+      navigation.navigate('ChefFoodDetails', {
+        item: {
+          ...item,
+          location: 'Kentucky 39495',
+          description:
+            'Lorem ipsum dolor sit amet, consetdur Maton adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.',
+        },
+      });
+    } catch (err: any) {
+      Alert.alert('Nav Error', err?.message ?? String(err));
+    }
+  };
+
+  const renderItem = ({ item }: { item: FoodItem }) => (
+    <Pressable
+      onPress={() => goToDetails(item)}
+      style={({ pressed }) => [styles.foodCard, { opacity: pressed ? 0.85 : 1 }]}
+    >
+      <Image source={{ uri: item.image }} style={styles.foodImage} resizeMode="cover" />
+      <View style={styles.foodInfo}>
+        <View style={styles.cardTopRow}>
+          <Text style={styles.foodName}>{item.name}</Text>
+          <TouchableOpacity
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            onPress={(e) => {
+              e.stopPropagation();
+              Alert.alert('Options', item.name);
+            }}
+          >
+            <Ionicons name="ellipsis-horizontal" size={18} color={GREY} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.categoryBadge}>
+          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+        </View>
+        <View style={styles.priceRow}>
+          <Text style={styles.price}>${item.price}</Text>
+          <Text style={styles.pickupLabel}>{item.pickupType}</Text>
+        </View>
+        <View style={styles.ratingRow}>
+          <Ionicons name="star" size={13} color="#FFB800" />
+          <Text style={styles.ratingText}>{item.rating}</Text>
+          <Text style={styles.reviewCount}>({item.reviews} Review)</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['top']}>
+      <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
+
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation?.goBack?.()}>
+          <Ionicons name="chevron-back" size={24} color={NAVY} />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Food List</Text>
+        <View style={{ width: 28 }} />
+      </View>
+
+      {/* Category Tabs */}
+      <View style={styles.tabs}>
+        {CATEGORIES.map((cat) => {
+          const active = selectedCategory === cat;
+          return (
+            <TouchableOpacity
+              key={cat}
+              style={[styles.catTab, active && styles.catTabActive]}
+              onPress={() => setSelectedCategory(cat)}
+            >
+              <Text style={[styles.catTabText, active && styles.catTabTextActive]}>
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Item count */}
+      <Text style={styles.totalCount}>Total {filtered.length.toString().padStart(2, '0')} items</Text>
+
+      {/* List */}
+      <FlatList
+        data={filtered}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* Bottom Nav */}
+      <View style={styles.navbar}>
+        {[
+          { icon: 'grid-outline', screen: 'ChefHome' },
+          { icon: 'list-outline', screen: 'ChefOrders' },
+          { icon: 'add-circle', fab: true },
+          { icon: 'notifications-outline', screen: 'ChefNotifications' },
+          { icon: 'person-outline', screen: 'ChefFoodList' },
+        ].map((tab: any, i) => {
+          if (tab.fab) {
+            return (
+              <TouchableOpacity key={i} style={styles.fabBtn} onPress={() => navigation?.navigate?.('ChefAddItem')}>
+                <Ionicons name="add" size={28} color={WHITE} />
+              </TouchableOpacity>
+            );
+          }
+          const isActive = activeNavTab === i;
+          return (
+            <TouchableOpacity
+              key={i}
+              style={styles.navItem}
+              onPress={() => {
+                setActiveNavTab(i);
+                navigation?.navigate?.(tab.screen);
+              }}
+            >
+              <Ionicons name={tab.icon} size={24} color={isActive ? ORANGE : GREY} />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: WHITE },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  headerTitle: { fontSize: 18, fontWeight: '700', color: NAVY },
+
+  tabs: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    paddingVertical: 8,
+    gap: 6,
+  },
+  catTab: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: '#EDEDED',
+  },
+  catTabActive: {
+    backgroundColor: ORANGE + '18',
+    borderColor: ORANGE,
+  },
+  catTabText: { fontSize: 12, fontWeight: '600', color: GREY },
+  catTabTextActive: { color: ORANGE },
+
+  totalCount: {
+    fontSize: 13,
+    color: GREY,
+    marginLeft: 20,
+    marginBottom: 8,
+  },
+
+  list: { paddingHorizontal: 20, paddingBottom: 100 },
+
+  foodCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: WHITE,
+    borderRadius: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    overflow: 'hidden',
+  },
+  foodImage: { width: 90, height: 90, borderRadius: 12 },
+  foodInfo: { flex: 1, paddingHorizontal: 12, paddingVertical: 8 },
+
+  cardTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 5,
+  },
+  foodName: { fontSize: 14, fontWeight: '700', color: NAVY, flex: 1, marginRight: 8 },
+
+  categoryBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: ORANGE + '20',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    marginBottom: 6,
+  },
+  categoryBadgeText: { fontSize: 11, fontWeight: '600', color: ORANGE },
+
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  price: { fontSize: 16, fontWeight: '800', color: NAVY },
+  pickupLabel: { fontSize: 11, color: GREY, fontWeight: '500' },
+
+  ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  ratingText: { fontSize: 12, fontWeight: '700', color: NAVY },
+  reviewCount: { fontSize: 11, color: GREY },
+
+  navbar: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    height: 64,
+    backgroundColor: WHITE,
+    borderRadius: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 12,
+    paddingHorizontal: 10,
+  },
+  navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
+  fabBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: ORANGE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: ORANGE,
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 8,
+    marginBottom: 16,
+  },
+});
