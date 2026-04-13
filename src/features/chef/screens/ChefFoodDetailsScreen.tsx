@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   StatusBar,
   Dimensions,
-  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +38,18 @@ const INGREDIENTS: Ingredient[] = [
   { label: 'Broccoli',emoji: '🥦' },
   { label: 'Orange',  emoji: '🍊' },
   { label: 'Walnut',  emoji: '🥜' },
+];
+
+// ── Default recipe steps ───────────────────────────────────────────────────────
+const DEFAULT_RECIPE: string[] = [
+  'Marinate chicken with spices, yogurt, and lemon juice for at least 1 hour.',
+  'Heat oil in a pan and sauté onions until golden brown.',
+  'Add garlic, ginger paste and cook for 2 minutes until fragrant.',
+  'Add marinated chicken and cook on medium heat for 10 minutes.',
+  'Pour in coconut milk and simmer for 15 minutes, stirring occasionally.',
+  'Wash and soak basmati rice, then cook separately until 70% done.',
+  'Layer rice over the curry, seal the pot and dum cook for 20 minutes.',
+  'Garnish with fried onions, fresh coriander and serve hot.',
 ];
 
 // ── Dot indicator ─────────────────────────────────────────────────────────────
@@ -72,12 +83,10 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
     description:
       'Lorem ipsum dolor sit amet, consetdur Maton adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.',
     ingredients: INGREDIENTS,
+    recipe: DEFAULT_RECIPE,
   };
 
-  const [activeNavTab, setActiveNavTab] = useState(4);
   const [activeSlide, setActiveSlide] = useState(0);
-
-  const handleEdit = () => Alert.alert('Edit', 'Edit food item coming soon!');
 
   // ── Ingredient chip ────────────────────────────────────────────────────────
   const IngredientChip = ({ item: ing }: { item: Ingredient }) => (
@@ -102,9 +111,7 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
           <Ionicons name="chevron-back" size={22} color={NAVY} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Food Details</Text>
-        <TouchableOpacity onPress={handleEdit}>
-          <Text style={styles.editText}>EDIT</Text>
-        </TouchableOpacity>
+        <View style={{ width: 36 }} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -168,6 +175,22 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
         <Text style={styles.sectionTitle}>Description</Text>
         <Text style={styles.description}>{item.description}</Text>
 
+        {/* ── Divider ─────────────────────────────────────────────────────── */}
+        <View style={styles.divider} />
+
+        {/* ── Recipe ────────────────────────────────────────────────────────── */}
+        <Text style={styles.sectionTitle}>RECIPE</Text>
+        <View style={styles.recipeList}>
+          {(item.recipe ?? DEFAULT_RECIPE).map((step: string, i: number) => (
+            <View key={i} style={styles.recipeStep}>
+              <View style={styles.stepNumCircle}>
+                <Text style={styles.stepNum}>{i + 1}</Text>
+              </View>
+              <Text style={styles.stepText}>{step}</Text>
+            </View>
+          ))}
+        </View>
+
         <View style={{ height: 110 }} />
       </ScrollView>
 
@@ -176,31 +199,17 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
         {[
           { icon: 'grid-outline',         screen: 'ChefHome'          },
           { icon: 'list-outline',          screen: 'ChefOrders'        },
-          { icon: 'add-circle',            fab: true                   },
+          { icon: 'fast-food-outline',     screen: 'ChefFoodList', active: true },
           { icon: 'notifications-outline', screen: 'ChefNotifications' },
-          { icon: 'person-outline',        screen: 'ChefFoodList'      },
-        ].map((tab: any, i) => {
-          if (tab.fab) {
-            return (
-              <TouchableOpacity key={i} style={styles.fabBtn}>
-                <Ionicons name="add" size={28} color={WHITE} />
-              </TouchableOpacity>
-            );
-          }
-          const isActive = activeNavTab === i;
-          return (
-            <TouchableOpacity
-              key={i}
-              style={styles.navItem}
-              onPress={() => {
-                setActiveNavTab(i);
-                navigation?.navigate?.(tab.screen);
-              }}
-            >
-              <Ionicons name={tab.icon} size={24} color={isActive ? ORANGE : GREY} />
-            </TouchableOpacity>
-          );
-        })}
+        ].map((tab: any, i) => (
+          <TouchableOpacity
+            key={i}
+            style={styles.navItem}
+            onPress={() => navigation?.navigate?.(tab.screen)}
+          >
+            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : GREY} />
+          </TouchableOpacity>
+        ))}
       </View>
     </SafeAreaView>
   );
@@ -228,7 +237,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: { fontSize: 17, fontWeight: '700', color: NAVY },
-  editText:    { fontSize: 13, fontWeight: '700', color: ORANGE, letterSpacing: 0.5 },
 
   // Hero
   heroWrap: {
@@ -337,6 +345,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
 
+  // Recipe
+  recipeList: {
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 20,
+  },
+  recipeStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: LIGHT_BG,
+    borderRadius: 14,
+    padding: 14,
+  },
+  stepNumCircle: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: ORANGE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  stepNum: { fontSize: 13, fontWeight: '800', color: WHITE },
+  stepText: { fontSize: 13, color: NAVY, lineHeight: 20, flex: 1 },
+
   // Bottom nav
   navbar: {
     position: 'absolute',
@@ -348,7 +383,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -356,17 +391,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
-  fabBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: ORANGE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: ORANGE,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
-    marginBottom: 16,
-  },
 });

@@ -108,7 +108,6 @@ const CATEGORIES: Category[] = ['All', 'Breakfast', 'Lunch', 'Dinner'];
 
 export default function ChefFoodListScreen({ navigation }: any) {
   const [selectedCategory, setSelectedCategory] = useState<Category>('All');
-  const [activeNavTab, setActiveNavTab] = useState(4);
 
   const filtered =
     selectedCategory === 'All'
@@ -213,31 +212,17 @@ export default function ChefFoodListScreen({ navigation }: any) {
         {[
           { icon: 'grid-outline', screen: 'ChefHome' },
           { icon: 'list-outline', screen: 'ChefOrders' },
-          { icon: 'add-circle', fab: true },
+          { icon: 'fast-food-outline', screen: 'ChefFoodList', active: true },
           { icon: 'notifications-outline', screen: 'ChefNotifications' },
-          { icon: 'person-outline', screen: 'ChefFoodList' },
-        ].map((tab: any, i) => {
-          if (tab.fab) {
-            return (
-              <TouchableOpacity key={i} style={styles.fabBtn} onPress={() => navigation?.navigate?.('ChefAddItem')}>
-                <Ionicons name="add" size={28} color={WHITE} />
-              </TouchableOpacity>
-            );
-          }
-          const isActive = activeNavTab === i;
-          return (
-            <TouchableOpacity
-              key={i}
-              style={styles.navItem}
-              onPress={() => {
-                setActiveNavTab(i);
-                navigation?.navigate?.(tab.screen);
-              }}
-            >
-              <Ionicons name={tab.icon} size={24} color={isActive ? ORANGE : GREY} />
-            </TouchableOpacity>
-          );
-        })}
+        ].map((tab: any, i) => (
+          <TouchableOpacity
+            key={i}
+            style={styles.navItem}
+            onPress={() => navigation?.navigate?.(tab.screen)}
+          >
+            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : GREY} />
+          </TouchableOpacity>
+        ))}
       </View>
     </SafeAreaView>
   );
@@ -340,7 +325,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -348,17 +333,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
-  fabBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: ORANGE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: ORANGE,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
-    marginBottom: 16,
-  },
 });

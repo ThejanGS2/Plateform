@@ -82,9 +82,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
   const pendingOrders = orders.filter((o) => o.status === 'pending');
 
   const markDone = (id: string) => {
-    setOrders((prev) =>
-      prev.map((o) => (o.id === id ? { ...o, status: 'done' } : o))
-    );
+    setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: 'done' } : o)));
   };
 
   const markCancelled = (id: string) => {
@@ -94,9 +92,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
         text: 'Yes',
         style: 'destructive',
         onPress: () =>
-          setOrders((prev) =>
-            prev.map((o) => (o.id === id ? { ...o, status: 'cancelled' } : o))
-          ),
+          setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: 'cancelled' } : o))),
       },
     ]);
   };
@@ -110,16 +106,10 @@ export default function ChefOrdersScreen({ navigation }: any) {
         <Text style={styles.orderId}>ID: {item.orderId}</Text>
         <View style={styles.priceRow}>
           <Text style={styles.price}>${item.price}</Text>
-          <TouchableOpacity
-            style={styles.doneBtn}
-            onPress={() => markDone(item.id)}
-          >
+          <TouchableOpacity style={styles.doneBtn} onPress={() => markDone(item.id)}>
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.cancelBtn}
-            onPress={() => markCancelled(item.id)}
-          >
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => markCancelled(item.id)}>
             <Text style={styles.cancelBtnText}>Cancel</Text>
           </TouchableOpacity>
         </View>
@@ -133,37 +123,39 @@ export default function ChefOrdersScreen({ navigation }: any) {
 
       {/* Header */}
       <View style={styles.header}>
+        <View style={{ width: 32 }} />
+
         <View style={styles.locationRow}>
-          <Ionicons name="menu-outline" size={24} color={NAVY} />
-          <View style={{ marginLeft: 12 }}>
-            <Text style={styles.locationLabel}>LOCATION</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.locationName}>Halal Lab office</Text>
-              <Ionicons name="chevron-down" size={14} color={NAVY} />
-            </View>
+          <Text style={styles.locationLabel}>LOCATION</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={styles.locationName}>Halal Lab office</Text>
+            <Ionicons name="chevron-down" size={14} color={NAVY} />
           </View>
         </View>
-        <TouchableOpacity onPress={() => navigation?.goBack?.()}>
+
+        <TouchableOpacity style={styles.avatarWrap} onPress={() => navigation?.navigate?.('ChefProfile')}>
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&q=80' }}
+            source={{ uri: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=200&q=80' }}
             style={styles.avatar}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Stats pill */}
+      {/* Stats */}
       <View style={styles.statsBg}>
         <View style={styles.statsRow}>
           <View style={styles.bigStatBox}>
-            <Text style={styles.bigNum}>20</Text>
+            <Text style={styles.bigStatLabel}>RUNNING ORDERS</Text>
+            <Text style={styles.bigNum}>{pendingOrders.length}</Text>
           </View>
           <View style={styles.bigStatBox}>
+            <Text style={styles.bigStatLabel}>ORDER REQUEST</Text>
             <Text style={styles.bigNum}>05</Text>
           </View>
         </View>
       </View>
 
-      {/* Running Orders List */}
+      {/* Orders list */}
       <View style={styles.listContainer}>
         <Text style={styles.listTitle}>{pendingOrders.length} Running Orders</Text>
         <FlatList
@@ -183,21 +175,20 @@ export default function ChefOrdersScreen({ navigation }: any) {
 
       {/* Bottom Nav */}
       <View style={styles.navbar}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation?.navigate?.('ChefHome')}>
-          <Ionicons name="grid-outline" size={24} color={GREY} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="list-outline" size={24} color={ORANGE} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.fabBtn} onPress={() => navigation?.navigate?.('ChefAddItem')}>
-          <Ionicons name="add" size={28} color={WHITE} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation?.navigate?.('ChefNotifications')}>
-          <Ionicons name="notifications-outline" size={24} color={GREY} />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation?.navigate?.('ChefFoodList')}>
-          <Ionicons name="person-outline" size={24} color={GREY} />
-        </TouchableOpacity>
+        {[
+          { icon: 'grid-outline', screen: 'ChefHome' },
+          { icon: 'list-outline', screen: 'ChefOrders', active: true },
+          { icon: 'fast-food-outline', screen: 'ChefFoodList' },
+          { icon: 'notifications-outline', screen: 'ChefNotifications' },
+        ].map((tab: any, i) => (
+          <TouchableOpacity
+            key={i}
+            style={styles.navItem}
+            onPress={() => navigation?.navigate?.(tab.screen)}
+          >
+            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : GREY} />
+          </TouchableOpacity>
+        ))}
       </View>
     </SafeAreaView>
   );
@@ -214,19 +205,18 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: BG,
   },
-  locationRow: { flexDirection: 'row', alignItems: 'center' },
+  menuBtn: { padding: 4 },
+  locationRow: { flex: 1, alignItems: 'center' },
   locationLabel: { fontSize: 10, fontWeight: '700', color: ORANGE, letterSpacing: 1.2 },
   locationName: { fontSize: 14, fontWeight: '700', color: NAVY },
+  avatarWrap: { width: 38, height: 38, borderRadius: 19, overflow: 'hidden' },
   avatar: { width: 38, height: 38, borderRadius: 19 },
 
-  statsBg: {
-    backgroundColor: BG,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-  },
-  statsRow: { flexDirection: 'row', gap: 20 },
-  bigStatBox: {},
-  bigNum: { fontSize: 52, fontWeight: '900', color: NAVY, lineHeight: 56 },
+  statsBg: { backgroundColor: BG, paddingHorizontal: 20, paddingBottom: 16 },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-evenly' },
+  bigStatBox: { flex: 1, alignItems: 'center' },
+  bigNum: { fontSize: 52, fontWeight: '900', color: NAVY, lineHeight: 56, textAlign: 'center' },
+  bigStatLabel: { fontSize: 10, fontWeight: '700', color: GREY, letterSpacing: 0.8, marginBottom: 2, textAlign: 'center' },
 
   listContainer: {
     flex: 1,
@@ -236,12 +226,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 20,
   },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: NAVY,
-    marginBottom: 16,
-  },
+  listTitle: { fontSize: 18, fontWeight: '800', color: NAVY, marginBottom: 16 },
 
   orderCard: {
     flexDirection: 'row',
@@ -261,20 +246,9 @@ const styles = StyleSheet.create({
   orderId: { fontSize: 12, color: GREY, marginTop: 1 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   price: { fontSize: 15, fontWeight: '800', color: NAVY, marginRight: 4 },
-  doneBtn: {
-    backgroundColor: ORANGE,
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-  },
+  doneBtn: { backgroundColor: ORANGE, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
   doneBtnText: { color: WHITE, fontSize: 12, fontWeight: '700' },
-  cancelBtn: {
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-  },
+  cancelBtn: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1.5, borderColor: '#E0E0E0' },
   cancelBtnText: { color: NAVY, fontSize: 12, fontWeight: '600' },
 
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },
@@ -290,7 +264,7 @@ const styles = StyleSheet.create({
     borderRadius: 32,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-around',
+    justifyContent: 'space-evenly',
     shadowColor: '#000',
     shadowOpacity: 0.12,
     shadowRadius: 20,
@@ -298,17 +272,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
-  fabBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: ORANGE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: ORANGE,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 8,
-    marginBottom: 16,
-  },
 });
+

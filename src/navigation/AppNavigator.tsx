@@ -28,7 +28,7 @@ import ChefOrdersScreen from '@/features/chef/screens/ChefOrdersScreen';
 import ChefNotificationsScreen from '@/features/chef/screens/ChefNotificationsScreen';
 import ChefFoodListScreen from '@/features/chef/screens/ChefFoodListScreen';
 import ChefFoodDetailsScreen from '@/features/chef/screens/ChefFoodDetailsScreen';
-import ChefAddItemScreen from '@/features/chef/screens/ChefAddItemScreen';
+import ChefProfileScreen from '@/features/chef/screens/ChefProfileScreen';
 import DriverHomeScreen from '@/features/driver/screens/DriverHomeScreen';
 
 // Sub-screens
@@ -77,7 +77,7 @@ export const AppNavigator = () => {
               <Stack.Screen name="ChefNotifications" component={ChefNotificationsScreen} />
               <Stack.Screen name="ChefFoodList" component={ChefFoodListScreen} />
               <Stack.Screen name="ChefFoodDetails" component={ChefFoodDetailsScreen} />
-              <Stack.Screen name="ChefAddItem" component={ChefAddItemScreen} />
+              <Stack.Screen name="ChefProfile" component={ChefProfileScreen} />
             </>
           ) : user?.role === 'driver' ? (
             <Stack.Screen name="DriverHome" component={DriverHomeScreen} />
