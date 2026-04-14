@@ -1,6 +1,7 @@
 import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import Order from '../models/Order';
+import Notification from '../models/Notification';
 
 export const placeOrder = async (req: AuthRequest, res: Response) => {
   const { totalAmount, deliveryAddress, items } = req.body;
@@ -20,6 +21,18 @@ export const placeOrder = async (req: AuthRequest, res: Response) => {
     });
     
     res.status(201).json(newOrder);
+
+    // Create Notification
+    try {
+      await Notification.create({
+        user: userId,
+        title: 'Payment Confirmed',
+        message: `Successfully processed Rs.${totalAmount} for your recent order.`,
+        type: 'ORDER_STATUS'
+      });
+    } catch (nErr) {
+      console.error('Failed to create notification:', nErr);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -47,11 +60,14 @@ export const getMyOrders = async (req: AuthRequest, res: Response) => {
 export const getOrderStatus = async (req: AuthRequest, res: Response) => {
   const { id } = req.params;
   try {
-    const order = await Order.findById(id).select('status');
+    const order = await Order.findById(id)
+      .populate('items.food')
+      .populate('user', 'fullName');
+    
     if (!order) {
       return res.status(404).json({ message: 'Order not found' });
     }
-    res.json({ status: order.status });
+    res.json(order);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });
@@ -85,7 +101,44 @@ export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
     if (!updatedOrder) {
       return res.status(404).json({ message: 'Order not found' });
     }
+
     res.json(updatedOrder);
+
+    // Create Notification based on status
+    try {
+      let title = '';
+      let message = '';
+      
+      switch (status) {
+        case 'accepted':
+          title = 'Order Confirmed';
+          message = 'The restaurant has accepted your order and will start preparing soon.';
+          break;
+        case 'preparing':
+          title = 'Chef is cooking';
+          message = 'Your food is being prepared with care!';
+          break;
+        case 'out_for_delivery':
+          title = 'Out for Delivery';
+          message = 'Your order is on the way! Arriving soon.';
+          break;
+        case 'delivered':
+          title = 'Order Delivered';
+          message = 'Your order has been delivered. Enjoy your meal!';
+          break;
+      }
+
+      if (title) {
+        await Notification.create({
+          user: updatedOrder.user,
+          title,
+          message,
+          type: 'ORDER_STATUS'
+        });
+      }
+    } catch (nErr) {
+      console.error('Failed to create status notification:', nErr);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

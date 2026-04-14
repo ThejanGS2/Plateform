@@ -34,6 +34,16 @@ export const updateOrderStatusApi = async (token: string, id: string, statusData
   return response.json();
 };
 
+export const fetchOrderByIdApi = async (token: string, id: string) => {
+  const response = await fetch(`${API_BASE_URL}/orders/${id}/status`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) throw new Error('Failed to fetch order details');
+  return response.json();
+};
+
 export const placeOrderApi = async (token: string, orderData: any) => {
   const response = await fetch(`${API_BASE_URL}/orders`, {
     method: 'POST',

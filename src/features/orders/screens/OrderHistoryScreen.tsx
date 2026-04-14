@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore, Order } from '@/store/useStore';
 
 const ORDERS = [
   {
@@ -33,6 +34,64 @@ const ORDERS = [
 ];
 
 export default function OrderHistoryScreen({ navigation }: any) {
+  const { orders, loadOrders } = useStore();
+
+  useEffect(() => {
+    loadOrders();
+  }, []);
+
+  const renderOrder = (order: Order) => {
+    const isActive = ['pending', 'accepted', 'preparing', 'out_for_delivery'].includes(order.status);
+    const date = new Date(order.createdAt || Date.now()).toLocaleString([], { 
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+    });
+
+    return (
+      <View key={order._id} style={styles.orderCard}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.orderDate}>{date}</Text>
+          <View style={[styles.statusBadge, isActive ? styles.statusActive : styles.statusDelivered]}>
+            <Text style={[styles.statusText, isActive ? styles.statusTextActive : styles.statusTextDelivered]}>
+              {order.status.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.itemsList}>
+          {order.items.map((item, idx) => (
+            <View key={idx} style={styles.itemRow}>
+               <Ionicons name="ellipse" size={6} color="#A0A5BA" style={{marginRight: 8}} />
+               <Text style={styles.itemText}>{item.quantity}x {item.food?.name || 'Item'}</Text>
+            </View>
+          ))}
+        </View>
+        
+        <View style={styles.totalRow}>
+          <Text style={styles.totalLabel}>Total:</Text>
+          <Text style={styles.totalValue}>Rs.{order.totalAmount.toFixed(2)}</Text>
+        </View>
+
+        <View style={styles.actionContainer}>
+          {isActive ? (
+            <AppButton 
+              title="TRACK ORDER" 
+              onPress={() => navigation.navigate('OrderTracker', { orderId: order._id })} 
+            />
+          ) : (
+            <View style={styles.splitRow}>
+              <TouchableOpacity style={styles.rateButton} onPress={() => navigation.navigate('RateFood', { foodName: order.items[0]?.food?.name })}>
+                <Text style={styles.rateText}>RATE</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.reorderButton} onPress={() => navigation.navigate('Home')}>
+                <Text style={styles.reorderText}>ORDER AGAIN</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -44,47 +103,13 @@ export default function OrderHistoryScreen({ navigation }: any) {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {ORDERS.map(order => (
-          <View key={order.id} style={styles.orderCard}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.orderDate}>{order.date}</Text>
-              <View style={[styles.statusBadge, order.active ? styles.statusActive : styles.statusDelivered]}>
-                <Text style={[styles.statusText, order.active ? styles.statusTextActive : styles.statusTextDelivered]}>
-                  {order.status}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.itemsList}>
-              {order.items.map((item, idx) => (
-                <View key={idx} style={styles.itemRow}>
-                   <Ionicons name="ellipse" size={6} color="#A0A5BA" style={{marginRight: 8}} />
-                   <Text style={styles.itemText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-            
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalValue}>Rs.{order.total.toFixed(2)}</Text>
-            </View>
-
-            <View style={styles.actionContainer}>
-              {order.active ? (
-                <AppButton title="TRACK ORDER" onPress={() => navigation.navigate('OrderTracker')} />
-              ) : (
-                <View style={styles.splitRow}>
-                  <TouchableOpacity style={styles.rateButton} onPress={() => navigation.navigate('RateFood', { foodName: order.items[0] })}>
-                    <Text style={styles.rateText}>RATE</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.reorderButton} onPress={() => navigation.navigate('Cart')}>
-                    <Text style={styles.reorderText}>REORDER</Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+        {orders.map(order => renderOrder(order))}
+        {orders.length === 0 && (
+          <View style={{ alignItems: 'center', marginTop: 100 }}>
+             <Ionicons name="receipt-outline" size={80} color="#F0F5FA" />
+             <Text style={{ color: Colors.textSecondary, marginTop: 16 }}>No orders yet</Text>
           </View>
-        ))}
+        )}
       </ScrollView>
     </SafeAreaView>
   );

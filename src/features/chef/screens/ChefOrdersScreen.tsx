@@ -30,11 +30,15 @@ export default function ChefOrdersScreen({ navigation }: any) {
     loadOrders();
   }, []);
 
-  const runningOrders = orders.filter((o) => ['accepted', 'preparing'].includes(o.status));
-  const pendingRequests = orders.filter((o) => o.status === 'pending');
+  const runningOrders = orders.filter((o) => o.status === 'preparing');
+  const pendingRequests = orders.filter((o) => o.status === 'accepted');
 
-  const handleAccept = (id: string) => {
-    updateOrderStatusRemote(id, 'accepted');
+  const handleStartCooking = (id: string) => {
+    updateOrderStatusRemote(id, 'preparing');
+  };
+
+  const handleFinishCooking = (id: string) => {
+    updateOrderStatusRemote(id, 'out_for_delivery');
   };
 
   const markPreparing = (id: string) => {
@@ -66,14 +70,14 @@ export default function ChefOrdersScreen({ navigation }: any) {
           <Text style={styles.orderId}>ID: {item._id.slice(-6).toUpperCase()}</Text>
           <View style={styles.priceRow}>
             <Text style={styles.price}>Rs.{price}</Text>
-            {isPending ? (
-               <TouchableOpacity style={styles.doneBtn} onPress={() => handleAccept(item._id)}>
-                 <Text style={styles.doneBtnText}>Accept</Text>
+            {activeTab === 'requests' ? (
+               <TouchableOpacity style={styles.doneBtn} onPress={() => handleStartCooking(item._id)}>
+                 <Text style={styles.doneBtnText}>Start Cooking</Text>
                </TouchableOpacity>
             ) : (
               <View style={{ flexDirection: 'row', gap: 6 }}>
-                <TouchableOpacity style={styles.doneBtn} onPress={() => markPreparing(item._id)}>
-                  <Text style={styles.doneBtnText}>{item.status === 'accepted' ? 'Cook' : 'Done'}</Text>
+                <TouchableOpacity style={styles.doneBtn} onPress={() => handleFinishCooking(item._id)}>
+                  <Text style={styles.doneBtnText}>Ready to Deliver</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => markCancelled(item._id)}>
                   <Text style={styles.cancelBtnText}>Cancel</Text>
@@ -117,14 +121,14 @@ export default function ChefOrdersScreen({ navigation }: any) {
             style={[styles.bigStatBox, activeTab === 'running' && styles.activeTabBox]} 
             onPress={() => setActiveTab('running')}
           >
-            <Text style={[styles.bigStatLabel, activeTab === 'running' && { color: ORANGE }]}>RUNNING ORDERS</Text>
+            <Text style={[styles.bigStatLabel, activeTab === 'running' && { color: ORANGE }]}>ACTIVE COOKING</Text>
             <Text style={[styles.bigNum, activeTab === 'running' && { color: ORANGE }]}>{runningOrders.length}</Text>
           </TouchableOpacity>
           <TouchableOpacity 
             style={[styles.bigStatBox, activeTab === 'requests' && styles.activeTabBox]} 
             onPress={() => setActiveTab('requests')}
           >
-            <Text style={[styles.bigStatLabel, activeTab === 'requests' && { color: ORANGE }]}>ORDER REQUEST</Text>
+            <Text style={[styles.bigStatLabel, activeTab === 'requests' && { color: ORANGE }]}>WAITING REQUESTS</Text>
             <Text style={[styles.bigNum, activeTab === 'requests' && { color: ORANGE }]}>{pendingRequests.length.toString().padStart(2, '0')}</Text>
           </TouchableOpacity>
         </View>
@@ -133,7 +137,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
       {/* Orders list */}
       <View style={styles.listContainer}>
         <Text style={styles.listTitle}>
-          {activeTab === 'running' ? `${runningOrders.length} Orders to Prepare` : `${pendingRequests.length} New Requests`}
+          {activeTab === 'running' ? `${runningOrders.length} Items being Prepared` : `${pendingRequests.length} Approved Requests`}
         </Text>
         <FlatList
           data={activeTab === 'running' ? runningOrders : pendingRequests}

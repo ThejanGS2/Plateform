@@ -23,13 +23,29 @@ const GREY = '#9E9E9E';
 
 export default function AdminOrdersScreen({ navigation }: any) {
   const { user, orders, loadOrders, updateOrderStatusRemote } = useStore();
+  const [prevCount, setPrevCount] = useState(0);
 
   useEffect(() => {
     loadOrders('pending');
+    
+    // Setup polling every 10s for new orders
+    const interval = setInterval(() => {
+      loadOrders('pending');
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const pendingOrders = orders.filter((o) => o.status === 'pending');
   const deliveredToday = orders.filter((o) => o.status === 'delivered').length;
+
+  useEffect(() => {
+    // Notify if new orders arrived
+    if (pendingOrders.length > prevCount && prevCount !== 0) {
+      Alert.alert('New Order!', 'You have a new order request waiting for approval.');
+    }
+    setPrevCount(pendingOrders.length);
+  }, [pendingOrders.length]);
 
   const markAccepted = async (id: string) => {
     await updateOrderStatusRemote(id, 'accepted');
@@ -96,12 +112,12 @@ export default function AdminOrdersScreen({ navigation }: any) {
       <View style={styles.statsBg}>
         <View style={styles.statsRow}>
           <View style={styles.bigStatBox}>
-            <Text style={styles.bigStatLabel}>RUNNING ORDERS</Text>
-            <Text style={styles.bigNum}>{pendingOrders.length}</Text>
+            <Text style={styles.bigStatLabel}>NEW REQUESTS</Text>
+            <Text style={styles.bigNum}>{pendingOrders.length.toString().padStart(2, '0')}</Text>
           </View>
           <View style={styles.bigStatBox}>
             <Text style={styles.bigStatLabel}>COMPLETED TODAY</Text>
-            <Text style={styles.bigNum}>{deliveredToday}</Text>
+            <Text style={styles.bigNum}>{deliveredToday.toString().padStart(2, '0')}</Text>
           </View>
         </View>
       </View>

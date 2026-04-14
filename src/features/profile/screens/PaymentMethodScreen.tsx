@@ -114,8 +114,12 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
     
     setLoading(true);
     try {
-      await placeNewOrder();
-      navigation.navigate('PaymentSuccess');
+      const order = await placeNewOrder();
+      if (order?._id) {
+        navigation.navigate('PaymentSuccess', { orderId: order._id });
+      } else {
+        navigation.navigate('PaymentSuccess');
+      }
     } catch (error) {
       Alert.alert('Order Failed', 'Something went wrong while placing your order. Please try again.');
     } finally {

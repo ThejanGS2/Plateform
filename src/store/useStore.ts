@@ -4,7 +4,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchAddressesApi } from '@/api/addressApi';
 import { fetchPaymentMethodsApi } from '@/api/paymentApi';
 import { fetchFoodsApi, addFoodApi, updateFoodApi, deleteFoodApi, fetchCategoriesApi } from '@/api/foodApi';
-import { fetchAllOrdersApi, fetchMyOrdersApi, updateOrderStatusApi, placeOrderApi } from '@/api/orderApi';
+import { 
+  fetchAllOrdersApi, 
+  fetchMyOrdersApi, 
+  updateOrderStatusApi, 
+  placeOrderApi,
+  fetchOrderByIdApi
+} from '@/api/orderApi';
+import { fetchMyNotificationsApi } from '@/api/notificationApi';
 import { fetchUsersApi } from '@/api/userApi';
 
 export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
@@ -63,6 +70,8 @@ interface AppState {
   loadAddresses: () => Promise<void>;
   loadPaymentMethods: () => Promise<void>;
   justLoggedIn: boolean;
+  trackingOrder: Order | null;
+  notifications: any[];
   setJustLoggedIn: (val: boolean) => void;
   orders: Order[];
   foods: Food[];
@@ -70,6 +79,8 @@ interface AppState {
   users: any[];
   loadOrders: (status?: string) => Promise<void>;
   updateOrderStatusRemote: (id: string, status: OrderStatus, locData?: any) => Promise<void>;
+  loadOrderDetails: (id: string) => Promise<void>;
+  loadNotifications: () => Promise<void>;
   loadFoods: () => Promise<void>;
   loadCategories: () => Promise<void>;
   loadUsers: () => Promise<void>;
@@ -133,6 +144,26 @@ export const useStore = create<AppState>()(
           console.error('Error updating order status:', error);
         }
       },
+      loadOrderDetails: async (id: string) => {
+        const token = get().token;
+        if (!token) return;
+        try {
+          const data = await fetchOrderByIdApi(token, id);
+          set({ trackingOrder: data });
+        } catch (error) {
+          console.error('Error loading order details:', error);
+        }
+      },
+      loadNotifications: async () => {
+        const token = get().token;
+        if (!token) return;
+        try {
+          const data = await fetchMyNotificationsApi(token);
+          set({ notifications: data });
+        } catch (error) {
+          console.error('Error loading notifications:', error);
+        }
+      },
       loadFoods: async () => {
         try {
           const data = await fetchFoodsApi();
@@ -179,7 +210,7 @@ export const useStore = create<AppState>()(
       },
       placeNewOrder: async () => {
         const { token, cart, currentAddress } = get();
-        if (!token || cart.length === 0) return;
+        if (!token || cart.length === 0) return null;
 
         const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
         const deliveryFee = 10;
@@ -197,9 +228,10 @@ export const useStore = create<AppState>()(
         };
 
         try {
-          await placeOrderApi(token, orderData);
+          const newOrder = await placeOrderApi(token, orderData);
           set({ cart: [] }); 
           await get().loadOrders();
+          return newOrder;
         } catch (error) {
           console.error('Error in placeNewOrder store action:', error);
           throw error;

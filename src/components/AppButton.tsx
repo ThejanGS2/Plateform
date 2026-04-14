@@ -7,6 +7,7 @@ interface AppButtonProps {
   onPress: () => void;
   variant?: 'primary' | 'secondary' | 'outline';
   loading?: boolean;
+  disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
 }
@@ -16,6 +17,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   onPress, 
   variant = 'primary', 
   loading = false,
+  disabled = false,
   style,
   textStyle
 }) => {
@@ -38,7 +40,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
     <TouchableOpacity 
       style={getButtonStyle()} 
       onPress={onPress} 
-      disabled={loading}
+      disabled={disabled || loading}
     >
       {loading ? (
         <ActivityIndicator color={variant === 'outline' ? Colors.primary : Colors.white} />

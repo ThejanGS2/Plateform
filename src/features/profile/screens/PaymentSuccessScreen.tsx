@@ -5,7 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
 
-export default function PaymentSuccessScreen({ navigation }: any) {
+export default function PaymentSuccessScreen({ navigation, route }: any) {
+  const { orderId } = route.params || {};
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
@@ -24,7 +26,10 @@ export default function PaymentSuccessScreen({ navigation }: any) {
       </View>
 
       <View style={styles.footer}>
-        <AppButton title="TRACK ORDER" onPress={() => navigation.navigate('OrderTracker')} />
+        <AppButton 
+          title="TRACK ORDER" 
+          onPress={() => navigation.navigate('OrderTracker', { orderId })} 
+        />
       </View>
     </SafeAreaView>
   );
