@@ -87,7 +87,7 @@ interface AppState {
   addProduct: (data: any) => Promise<void>;
   updateProduct: (id: string, data: any) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
-  placeNewOrder: () => Promise<void>;
+  placeNewOrder: () => Promise<Order | null>;
   cart: any[];
   addToCart: (food: Food, size: string, qty: number) => void;
   updateCartQty: (foodId: string, size: string, delta: number) => void;
@@ -104,6 +104,8 @@ export const useStore = create<AppState>()(
       paymentMethods: [],
       currentAddress: 'Halal Lab office',
       justLoggedIn: false,
+      trackingOrder: null,
+      notifications: [],
       setUser: (user) => set({ user }),
       setToken: (token) => set({ token }),
       setAddresses: (addresses) => set({ addresses }),
