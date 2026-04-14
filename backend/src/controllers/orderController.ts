@@ -2,6 +2,59 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import Order from '../models/Order';
 import Notification from '../models/Notification';
+import Food from '../models/Food';
+
+export const getChefStats = async (req: AuthRequest, res: Response) => {
+  try {
+    const runningOrders = await Order.countDocuments({ status: { $in: ['accepted', 'preparing'] } });
+    const orderRequests = await Order.countDocuments({ status: 'pending' });
+
+    // Popular items aggregation
+    const popularItems = await Order.aggregate([
+      { $unwind: '$items' },
+      {
+        $group: {
+          _id: '$items.food',
+          orderCount: { $sum: '$items.quantity' }
+        }
+      },
+      { $sort: { orderCount: -1 } },
+      { $limit: 4 },
+      {
+        $lookup: {
+          from: 'foods',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'foodDetails'
+        }
+      },
+      { $unwind: '$foodDetails' },
+      {
+        $project: {
+          name: '$foodDetails.name',
+          uri: '$foodDetails.imageUrl',
+          orders: '$orderCount'
+        }
+      }
+    ]);
+
+    // Calculate average rating from available foods
+    const foods = await Food.find({});
+    const totalRating = foods.reduce((sum, f) => sum + (f.rating || 0), 0);
+    const averageRating = foods.length > 0 ? (totalRating / foods.length).toFixed(1) : '4.5';
+
+    res.json({
+      runningOrders,
+      orderRequests,
+      popularItems,
+      averageRating,
+      totalReviews: Math.max(20, foods.length * 3) // Dynamic placeholder
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 export const placeOrder = async (req: AuthRequest, res: Response) => {
   const { totalAmount, deliveryAddress, items } = req.body;

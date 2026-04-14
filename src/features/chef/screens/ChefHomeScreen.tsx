@@ -19,19 +19,6 @@ const LIGHT_BG = '#F2F3F7';
 const WHITE = '#FFFFFF';
 const GREY_TEXT = '#9E9E9E';
 
-const POPULAR = [
-  {
-    name: 'Butter Chicken',
-    uri: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=300&q=80',
-    orders: 42,
-  },
-  {
-    name: 'Spring Rolls',
-    uri: 'https://images.unsplash.com/photo-1548869190-2a99cf3b5a16?w=300&q=80',
-    orders: 36,
-  },
-];
-
 const TABS = [
   { icon: 'grid-outline',          label: 'Dashboard', screen: 'ChefHome'          },
   { icon: 'list-outline',          label: 'Orders',    screen: 'ChefOrders'        },
@@ -40,13 +27,14 @@ const TABS = [
 ];
 
 export default function ChefHomeScreen({ navigation }: any) {
-  const { user } = useStore();
+  const { user, chefStats, loadChefStats } = useStore();
   const [activeTab, setActiveTab] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
       setActiveTab(0);
-    }, [])
+      loadChefStats();
+    }, [loadChefStats])
   );
 
   return (
@@ -71,7 +59,7 @@ export default function ChefHomeScreen({ navigation }: any) {
           onPress={() => navigation?.navigate?.('ChefProfile')}
         >
           <Image
-            source={{ uri: 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=200&q=80' }}
+            source={{ uri: user?.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=200&q=80' }}
             style={styles.avatar}
           />
         </TouchableOpacity>
@@ -89,11 +77,11 @@ export default function ChefHomeScreen({ navigation }: any) {
               <Text style={styles.statLabel}>RUNNING ORDERS</Text>
               <Ionicons name="arrow-forward" size={14} color={ORANGE} />
             </View>
-            <Text style={styles.statNumber}>20</Text>
+            <Text style={styles.statNumber}>{chefStats?.runningOrders ?? '0'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.statCard} onPress={() => navigation?.navigate?.('ChefOrders')}>
             <Text style={styles.statLabel}>ORDER REQUEST</Text>
-            <Text style={styles.statNumber}>05</Text>
+            <Text style={styles.statNumber}>{chefStats?.orderRequests?.toString().padStart(2, '0') ?? '00'}</Text>
           </TouchableOpacity>
         </View>
 
@@ -107,8 +95,8 @@ export default function ChefHomeScreen({ navigation }: any) {
           </View>
           <View style={styles.reviewRow}>
             <Ionicons name="star" size={22} color="#FFB800" />
-            <Text style={styles.ratingNum}>4.9</Text>
-            <Text style={styles.ratingMeta}>  Total 20 Reviews</Text>
+            <Text style={styles.ratingNum}>{chefStats?.averageRating ?? '4.5'}</Text>
+            <Text style={styles.ratingMeta}>  Total {chefStats?.totalReviews ?? '20'} Reviews</Text>
           </View>
         </View>
 
@@ -121,15 +109,21 @@ export default function ChefHomeScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
           <View style={styles.popularGrid}>
-            {POPULAR.map((item, i) => (
-              <View key={i} style={styles.popularCard}>
-                <Image source={{ uri: item.uri }} style={styles.popularImage} resizeMode="cover" />
-                <View style={styles.popularOverlay}>
-                  <Text style={styles.popularName} numberOfLines={1}>{item.name}</Text>
-                  <Text style={styles.popularOrders}>{item.orders} orders</Text>
+            {(chefStats?.popularItems || []).length > 0 ? (
+               chefStats?.popularItems.map((item: any, i: number) => (
+                <View key={i} style={styles.popularCard}>
+                  <Image source={{ uri: item.uri || 'https://via.placeholder.com/300' }} style={styles.popularImage} resizeMode="cover" />
+                  <View style={styles.popularOverlay}>
+                    <Text style={styles.popularName} numberOfLines={1}>{item.name}</Text>
+                    <Text style={styles.popularOrders}>{item.orders} orders</Text>
+                  </View>
                 </View>
-              </View>
-            ))}
+              ))
+            ) : (
+                <View style={{flex: 1, height: 80, justifyContent: 'center', alignItems: 'center'}}>
+                    <Text style={{color: GREY_TEXT}}>No sales data yet</Text>
+                </View>
+            )}
           </View>
         </View>
 

@@ -9,7 +9,8 @@ import {
   fetchMyOrdersApi, 
   updateOrderStatusApi, 
   placeOrderApi,
-  fetchOrderByIdApi
+  fetchOrderByIdApi,
+  fetchChefStatsApi
 } from '@/api/orderApi';
 import { fetchMyNotificationsApi } from '@/api/notificationApi';
 import { fetchUsersApi } from '@/api/userApi';
@@ -93,6 +94,8 @@ interface AppState {
   updateCartQty: (foodId: string, size: string, delta: number) => void;
   removeFromCart: (foodId: string, size: string) => void;
   clearCart: () => void;
+  chefStats: any | null;
+  loadChefStats: () => Promise<void>;
 }
 
 export const useStore = create<AppState>()(
@@ -282,10 +285,21 @@ export const useStore = create<AppState>()(
         });
         set({ cart: updatedCart });
       },
-      removeFromCart: (foodId, size) => {
+      removeFromCart: (foodId: string, size: string) => {
         set({ cart: get().cart.filter(item => !(item.food._id === foodId && item.size === size)) });
       },
       clearCart: () => set({ cart: [] }),
+      chefStats: null,
+      loadChefStats: async () => {
+        const token = get().token;
+        if (!token) return;
+        try {
+          const data = await fetchChefStatsApi(token);
+          set({ chefStats: data });
+        } catch (error) {
+          console.error('Error loading chef stats:', error);
+        }
+      },
     }),
     {
       name: 'plateform-storage',

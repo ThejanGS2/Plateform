@@ -56,3 +56,13 @@ export const placeOrderApi = async (token: string, orderData: any) => {
   if (!response.ok) throw new Error('Failed to place order');
   return response.json();
 };
+
+export const fetchChefStatsApi = async (token: string) => {
+  const response = await fetch(`${API_BASE_URL}/orders/stats`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) throw new Error('Failed to fetch chef stats');
+  return response.json();
+};
