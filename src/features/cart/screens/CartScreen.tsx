@@ -4,13 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
 
-const CART_ITEMS = [
-  { id: '1', name: 'Pizza Calzone European', price: 64, size: '14"', qty: 2 },
-  { id: '2', name: 'Pizza Calzone European', price: 32, size: '14"', qty: 1 },
-];
+// Local mock items removed
 
 export default function CartScreen({ navigation }: any) {
+  const { cart, updateCartQty, removeFromCart, currentAddress } = useStore();
+
+  const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
+  const deliveryFee = cart.length > 0 ? 10 : 0;
+  const total = subtotal + deliveryFee;
+
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.topArea}>
@@ -19,48 +23,60 @@ export default function CartScreen({ navigation }: any) {
             <Ionicons name="chevron-back" size={24} color={Colors.white} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Cart</Text>
-          <TouchableOpacity><Text style={styles.headerDone}>DONE</Text></TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Text style={styles.headerDone}>DONE</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
 
       <ScrollView showsVerticalScrollIndicator={false} style={styles.itemsScroll}>
-        {CART_ITEMS.map((item, index) => (
-          <View key={item.id} style={styles.cartItem}>
+        {cart.map((item) => (
+          <View key={`${item.food._id}-${item.size}`} style={styles.cartItem}>
             <View style={styles.itemImageContainer}>
-               <Ionicons name="pizza" size={40} color="#FF7A28" />
+               <Image source={{ uri: item.food.imageUrl }} style={{ width: '100%', height: '100%', borderRadius: 15 }} resizeMode="cover" />
             </View>
             <View style={styles.itemDetails}>
-              <Text style={styles.itemName}>{item.name}</Text>
-              <Text style={styles.itemPrice}>${item.price}</Text>
+              <Text style={styles.itemName}>{item.food.name}</Text>
+              <Text style={styles.itemPrice}>Rs.{item.food.price * item.qty}</Text>
               <Text style={styles.itemSize}>{item.size}</Text>
               
               <View style={styles.qtyControls}>
-                 <TouchableOpacity style={styles.qtyBtn}><Ionicons name="remove" size={16} color={Colors.white}/></TouchableOpacity>
+                 <TouchableOpacity style={styles.qtyBtn} onPress={() => updateCartQty(item.food._id, item.size, -1)}>
+                   <Ionicons name="remove" size={16} color={Colors.white}/>
+                 </TouchableOpacity>
                  <Text style={styles.qtyText}>{item.qty}</Text>
-                 <TouchableOpacity style={styles.qtyBtn}><Ionicons name="add" size={16} color={Colors.white}/></TouchableOpacity>
+                 <TouchableOpacity style={styles.qtyBtn} onPress={() => updateCartQty(item.food._id, item.size, 1)}>
+                   <Ionicons name="add" size={16} color={Colors.white}/>
+                 </TouchableOpacity>
               </View>
             </View>
-            <TouchableOpacity style={styles.deleteBtn}>
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => removeFromCart(item.food._id, item.size)}>
               <Ionicons name="close" size={16} color={Colors.white} />
             </TouchableOpacity>
           </View>
         ))}
+        {cart.length === 0 && (
+          <View style={{ alignItems: 'center', marginTop: 100 }}>
+            <Ionicons name="cart-outline" size={80} color="rgba(255,255,255,0.1)" />
+            <Text style={{ color: Colors.white, opacity: 0.5, marginTop: 20 }}>Your cart is empty</Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Bottom Sheet Area */}
       <View style={styles.bottomSheet}>
         <View style={styles.deliveryRow}>
            <Text style={styles.deliveryLabel}>DELIVERY ADDRESS</Text>
-           <TouchableOpacity onPress={() => navigation.navigate('EditAddress')}><Text style={styles.editLabel}>EDIT</Text></TouchableOpacity>
+           <TouchableOpacity onPress={() => navigation.navigate('Addresses')}><Text style={styles.editLabel}>EDIT</Text></TouchableOpacity>
         </View>
         <View style={styles.addressBox}>
-           <Text style={styles.addressText}>2118 Thornridge Cir. Syracuse</Text>
+           <Text style={styles.addressText}>{currentAddress || 'No address selected'}</Text>
         </View>
 
         <View style={styles.totalRow}>
            <View style={{flexDirection:'row', alignItems:'baseline', gap:8}}>
              <Text style={styles.totalLabel}>TOTAL:</Text>
-             <Text style={styles.totalValue}>$96</Text>
+             <Text style={styles.totalValue}>Rs.{total}</Text>
            </View>
            <TouchableOpacity onPress={() => navigation.navigate('PaymentBreakdown')}><Text style={styles.breakdownText}>Breakdown {'>'}</Text></TouchableOpacity>
         </View>

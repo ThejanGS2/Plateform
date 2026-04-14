@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,11 +12,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useStore } from '@/store/useStore';
 
 const ORANGE = '#FF7A28';
 const NAVY = '#1C1C2E';
 const WHITE = '#FFFFFF';
 const GREY = '#9E9E9E';
+const LIGHT_BG = '#F2F3F7';
 
 type Category = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
 
@@ -28,6 +30,7 @@ interface FoodItem {
   rating: number;
   reviews: number;
   pickupType: string;
+  chef: string;
   image: string;
 }
 
@@ -40,6 +43,7 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.9,
     reviews: 10,
     pickupType: 'Pick UP',
+    chef: 'Chef Mario',
     image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80',
   },
   {
@@ -50,6 +54,7 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.9,
     reviews: 10,
     pickupType: 'Pick UP',
+    chef: 'Chef Ana',
     image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200&q=80',
   },
   {
@@ -60,6 +65,7 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.9,
     reviews: 10,
     pickupType: 'Pick UP',
+    chef: 'Chef Mario',
     image: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=200&q=80',
   },
   {
@@ -70,6 +76,7 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.8,
     reviews: 23,
     pickupType: 'Delivery',
+    chef: 'Chef Ana',
     image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&q=80',
   },
   {
@@ -80,6 +87,7 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.7,
     reviews: 15,
     pickupType: 'Pick UP',
+    chef: 'Chef Mario',
     image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80',
   },
   {
@@ -90,6 +98,7 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.9,
     reviews: 31,
     pickupType: 'Delivery',
+    chef: 'Chef Ana',
     image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=200&q=80',
   },
   {
@@ -100,42 +109,51 @@ const ALL_ITEMS: FoodItem[] = [
     rating: 4.8,
     reviews: 18,
     pickupType: 'Pick UP',
+    chef: 'Chef Mario',
     image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=200&q=80',
+  },
+  {
+    id: '8',
+    name: 'Veggie Burrito Bowl',
+    category: 'Lunch',
+    price: 28,
+    rating: 4.6,
+    reviews: 12,
+    pickupType: 'Delivery',
+    chef: 'Chef Ana',
+    image: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=200&q=80',
   },
 ];
 
 const CATEGORIES: Category[] = ['All', 'Breakfast', 'Lunch', 'Dinner'];
 
-export default function ChefFoodListScreen({ navigation }: any) {
-  const [items, setItems] = useState<FoodItem[]>(ALL_ITEMS);
-  const [selectedCategory, setSelectedCategory] = useState<Category>('All');
+export default function AdminMenuScreen({ navigation }: any) {
+  const { foods, categories, loadFoods, loadCategories, deleteProduct } = useStore();
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  useEffect(() => {
+    loadFoods();
+    loadCategories();
+  }, []);
 
   const filtered =
     selectedCategory === 'All'
-      ? items
-      : items.filter((i) => i.category === selectedCategory);
+      ? foods
+      : foods.filter((v: any) => 
+          (typeof v.category === 'string' && v.category === selectedCategory) || 
+          (v.category?.name === selectedCategory)
+        );
 
-  const goToDetails = (item: FoodItem) => {
-    try {
-      navigation.navigate('ChefFoodDetails', {
-        item: {
-          ...item,
-          location: 'Kentucky 39495',
-          description:
-            'Lorem ipsum dolor sit amet, consetdur Maton adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.',
-        },
-      });
-    } catch (err: any) {
-      Alert.alert('Nav Error', err?.message ?? String(err));
-    }
+  const goToDetails = (item: any) => {
+    navigation.navigate('AdminFoodDetails', { item });
   };
 
-  const renderItem = ({ item }: { item: FoodItem }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <Pressable
       onPress={() => goToDetails(item)}
       style={({ pressed }) => [styles.foodCard, { opacity: pressed ? 0.85 : 1 }]}
     >
-      <Image source={{ uri: item.image }} style={styles.foodImage} resizeMode="cover" />
+      <Image source={{ uri: item.imageUrl || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80' }} style={styles.foodImage} resizeMode="cover" />
       <View style={styles.foodInfo}>
         <View style={styles.cardTopRow}>
           <Text style={styles.foodName}>{item.name}</Text>
@@ -151,13 +169,13 @@ export default function ChefFoodListScreen({ navigation }: any) {
                   { 
                     text: 'Delete', 
                     style: 'destructive',
-                    onPress: () => {
-                      setItems((prev) => prev.filter((i) => i.id !== item.id));
+                    onPress: async () => {
+                      await deleteProduct(item._id);
                     }
                   },
                   { 
                     text: 'Edit', 
-                    onPress: () => navigation.navigate('ChefAddItem', { item }) 
+                    onPress: () => navigation.navigate('AdminAddItem', { item }) 
                   },
                 ]
               );
@@ -166,17 +184,24 @@ export default function ChefFoodListScreen({ navigation }: any) {
             <Ionicons name="ellipsis-horizontal" size={18} color={GREY} />
           </TouchableOpacity>
         </View>
+
         <View style={styles.categoryBadge}>
-          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+          <Text style={styles.categoryBadgeText}>
+            {typeof item.category === 'string' ? item.category : item.category?.name || 'Lunch'}
+          </Text>
         </View>
+
+        <Text style={styles.chefLabel}>👨‍🍳 {item.chef || 'Chef Mario'}</Text>
+
         <View style={styles.priceRow}>
           <Text style={styles.price}>Rs.{item.price}</Text>
-          <Text style={styles.pickupLabel}>{item.pickupType}</Text>
+          <Text style={styles.pickupLabel}>{item.isAvailable ? 'Available' : 'Sold Out'}</Text>
         </View>
+
         <View style={styles.ratingRow}>
           <Ionicons name="star" size={13} color="#FFB800" />
-          <Text style={styles.ratingText}>{item.rating}</Text>
-          <Text style={styles.reviewCount}>({item.reviews} Review)</Text>
+          <Text style={styles.ratingText}>{item.rating || '0.0'}</Text>
+          <Text style={styles.reviewCount}>(0 Reviews)</Text>
         </View>
       </View>
     </Pressable>
@@ -191,13 +216,13 @@ export default function ChefFoodListScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation?.goBack?.()}>
           <Ionicons name="chevron-back" size={24} color={NAVY} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>My Food List</Text>
+        <Text style={styles.headerTitle}>Platform Menu</Text>
         <View style={{ width: 28 }} />
       </View>
 
       {/* Category Tabs */}
       <View style={styles.tabs}>
-        {CATEGORIES.map((cat) => {
+        {['All', ...categories.map((c: any) => c.name)].map((cat) => {
           const active = selectedCategory === cat;
           return (
             <TouchableOpacity
@@ -214,31 +239,41 @@ export default function ChefFoodListScreen({ navigation }: any) {
       </View>
 
       {/* Item count */}
-      <Text style={styles.totalCount}>Total {filtered.length.toString().padStart(2, '0')} items</Text>
+      <Text style={styles.totalCount}>
+        Total {filtered.length.toString().padStart(2, '0')} items
+      </Text>
 
       {/* List */}
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
       />
 
+      {/* FAB — Add New Item */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation?.navigate?.('AdminAddItem')}
+      >
+        <Ionicons name="add" size={28} color={WHITE} />
+      </TouchableOpacity>
+
       {/* Bottom Nav */}
       <View style={styles.navbar}>
         {[
-          { icon: 'grid-outline', screen: 'ChefHome' },
-          { icon: 'list-outline', screen: 'ChefOrders' },
-          { icon: 'fast-food-outline', screen: 'ChefFoodList', active: true },
-          { icon: 'notifications-outline', screen: 'ChefNotifications' },
+          { icon: 'grid-outline',          screen: 'AdminHome' },
+          { icon: 'list-outline',          screen: 'AdminOrders' },
+          { icon: 'people-outline',        screen: 'AdminUsers' },
+          { icon: 'notifications-outline', screen: 'AdminNotifications' },
         ].map((tab: any, i) => (
           <TouchableOpacity
             key={i}
             style={styles.navItem}
             onPress={() => navigation?.navigate?.(tab.screen)}
           >
-            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : GREY} />
+            <Ionicons name={tab.icon} size={24} color={GREY} />
           </TouchableOpacity>
         ))}
       </View>
@@ -299,14 +334,14 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: 'hidden',
   },
-  foodImage: { width: 90, height: 90, borderRadius: 12 },
+  foodImage: { width: 90, height: 100, borderRadius: 12 },
   foodInfo: { flex: 1, paddingHorizontal: 12, paddingVertical: 8 },
 
   cardTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 5,
+    marginBottom: 4,
   },
   foodName: { fontSize: 14, fontWeight: '700', color: NAVY, flex: 1, marginRight: 8 },
 
@@ -316,9 +351,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 10,
     paddingVertical: 3,
-    marginBottom: 6,
+    marginBottom: 4,
   },
   categoryBadgeText: { fontSize: 11, fontWeight: '600', color: ORANGE },
+
+  chefLabel: { fontSize: 11, color: GREY, marginBottom: 4 },
 
   priceRow: {
     flexDirection: 'row',
@@ -332,6 +369,22 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   ratingText: { fontSize: 12, fontWeight: '700', color: NAVY },
   reviewCount: { fontSize: 11, color: GREY },
+
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: ORANGE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: ORANGE,
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 10,
+  },
 
   navbar: {
     position: 'absolute',

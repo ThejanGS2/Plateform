@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
+import { useStore } from '@/store/useStore';
 
 const FOOD_DATABASE = [
   { id: '1', name: 'Pizza Calzone European', restaurant: 'Uttora Coffe House', price: 32, rating: 4.7, category: 'Pizza', icon: 'pizza' },
@@ -23,8 +24,12 @@ const FOOD_DATABASE = [
 
 export default function CategoryDetailsScreen({ route, navigation }: any) {
   const { category } = route.params;
+  const { foods } = useStore();
   
-  const filteredFoods = FOOD_DATABASE.filter(food => food.category === category);
+  const filteredFoods = foods.filter(food => 
+    (typeof food.category === 'string' && food.category === category) ||
+    (food.category?.name === category)
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,22 +46,23 @@ export default function CategoryDetailsScreen({ route, navigation }: any) {
         <View style={styles.foodList}>
           {filteredFoods.map(food => (
             <TouchableOpacity 
-              key={food.id} 
+              key={food._id} 
               style={styles.foodCard} 
-              onPress={() => navigation.navigate('FoodDetails', { foodId: food.id })}
+              onPress={() => navigation.navigate('FoodDetails', { foodId: food._id })}
             >
               <View style={styles.foodImageContainer}>
-                 <Ionicons name={food.icon as any} size={40} color={Colors.white} />
+                 <Ionicons name="fast-food" size={40} color={Colors.white} />
               </View>
               <View style={styles.foodInfo}>
                 <Text style={styles.foodName}>{food.name}</Text>
+                <Text style={styles.foodDesc} numberOfLines={1}>{food.description}</Text>
                 
                 <View style={styles.foodMetaRow}>
                   <View style={styles.ratingBadge}>
                     <Ionicons name="star" size={12} color={Colors.white} style={{ marginRight: 4 }} />
-                    <Text style={styles.ratingText}>{food.rating}</Text>
+                    <Text style={styles.ratingText}>{food.rating || '4.5'}</Text>
                   </View>
-                  <Text style={styles.foodPrice}>${food.price}</Text>
+                  <Text style={styles.foodPrice}>Rs.{food.price}</Text>
                 </View>
               </View>
             </TouchableOpacity>

@@ -21,24 +21,18 @@ const GREY = '#9E9E9E';
 
 // Removing local INITIAL_ORDERS array and interface here in favor of global store
 
-export default function ChefOrdersScreen({ navigation }: any) {
+export default function AdminOrdersScreen({ navigation }: any) {
   const { user, orders, loadOrders, updateOrderStatusRemote } = useStore();
-  const [activeTab, setActiveTab] = useState<'running' | 'requests'>('running');
 
   useEffect(() => {
-    // Load all orders for chef to see counts
-    loadOrders();
+    loadOrders('pending');
   }, []);
 
-  const runningOrders = orders.filter((o) => ['accepted', 'preparing'].includes(o.status));
-  const pendingRequests = orders.filter((o) => o.status === 'pending');
+  const pendingOrders = orders.filter((o) => o.status === 'pending');
+  const deliveredToday = orders.filter((o) => o.status === 'delivered').length;
 
-  const handleAccept = (id: string) => {
-    updateOrderStatusRemote(id, 'accepted');
-  };
-
-  const markPreparing = (id: string) => {
-    updateOrderStatusRemote(id, 'preparing');
+  const markAccepted = async (id: string) => {
+    await updateOrderStatusRemote(id, 'accepted');
   };
 
   const markCancelled = (id: string) => {
@@ -53,9 +47,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
     const food = firstItem?.food;
     const foodName = food?.name || 'Multiple Items';
     const foodImage = food?.imageUrl || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80';
-    
-    const price = item.totalAmount;
-    const isPending = item.status === 'pending';
+    const customerName = item.user?.fullName || 'Customer';
 
     return (
       <View style={styles.orderCard}>
@@ -63,23 +55,15 @@ export default function ChefOrdersScreen({ navigation }: any) {
         <View style={styles.orderInfo}>
           <Text style={styles.categoryTag}>#{food?.category?.name || 'Lunch'}</Text>
           <Text style={styles.foodName}>{foodName}</Text>
-          <Text style={styles.orderId}>ID: {item._id.slice(-6).toUpperCase()}</Text>
+          <Text style={styles.orderId}>ID: {item._id.slice(-6).toUpperCase()}  ·  {customerName}</Text>
           <View style={styles.priceRow}>
-            <Text style={styles.price}>Rs.{price}</Text>
-            {isPending ? (
-               <TouchableOpacity style={styles.doneBtn} onPress={() => handleAccept(item._id)}>
-                 <Text style={styles.doneBtnText}>Accept</Text>
-               </TouchableOpacity>
-            ) : (
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                <TouchableOpacity style={styles.doneBtn} onPress={() => markPreparing(item._id)}>
-                  <Text style={styles.doneBtnText}>{item.status === 'accepted' ? 'Cook' : 'Done'}</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.cancelBtn} onPress={() => markCancelled(item._id)}>
-                  <Text style={styles.cancelBtnText}>Cancel</Text>
-                </TouchableOpacity>
-              </View>
-            )}
+            <Text style={styles.price}>Rs.{item.totalAmount}</Text>
+            <TouchableOpacity style={styles.doneBtn} onPress={() => markAccepted(item._id)}>
+              <Text style={styles.doneBtnText}>Accept</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => markCancelled(item._id)}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
@@ -93,50 +77,40 @@ export default function ChefOrdersScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         <View style={{ width: 32 }} />
-
         <View style={styles.locationRow}>
-          <Text style={styles.locationLabel}>LOCATION</Text>
+          <Text style={styles.locationLabel}>ADMIN PANEL</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={styles.locationName}>{user?.address || 'Plateform Kitchen'}</Text>
+            <Text style={styles.locationName}>Order Management</Text>
             <Ionicons name="chevron-down" size={14} color={NAVY} />
           </View>
         </View>
-
-        <TouchableOpacity style={styles.avatarWrap} onPress={() => navigation?.navigate?.('ChefProfile')}>
+        <TouchableOpacity style={styles.avatarWrap} onPress={() => navigation?.navigate?.('AdminProfile')}>
           <Image
-            source={{ uri: user?.avatarUrl || 'https://images.unsplash.com/photo-1577219491135-ce391730fb2c?w=200&q=80' }}
+            source={{ uri: user?.avatarUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&q=80' }}
             style={styles.avatar}
           />
         </TouchableOpacity>
       </View>
 
-      {/* Stats / Tabs */}
+      {/* Stats */}
       <View style={styles.statsBg}>
         <View style={styles.statsRow}>
-          <TouchableOpacity 
-            style={[styles.bigStatBox, activeTab === 'running' && styles.activeTabBox]} 
-            onPress={() => setActiveTab('running')}
-          >
-            <Text style={[styles.bigStatLabel, activeTab === 'running' && { color: ORANGE }]}>RUNNING ORDERS</Text>
-            <Text style={[styles.bigNum, activeTab === 'running' && { color: ORANGE }]}>{runningOrders.length}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.bigStatBox, activeTab === 'requests' && styles.activeTabBox]} 
-            onPress={() => setActiveTab('requests')}
-          >
-            <Text style={[styles.bigStatLabel, activeTab === 'requests' && { color: ORANGE }]}>ORDER REQUEST</Text>
-            <Text style={[styles.bigNum, activeTab === 'requests' && { color: ORANGE }]}>{pendingRequests.length.toString().padStart(2, '0')}</Text>
-          </TouchableOpacity>
+          <View style={styles.bigStatBox}>
+            <Text style={styles.bigStatLabel}>RUNNING ORDERS</Text>
+            <Text style={styles.bigNum}>{pendingOrders.length}</Text>
+          </View>
+          <View style={styles.bigStatBox}>
+            <Text style={styles.bigStatLabel}>COMPLETED TODAY</Text>
+            <Text style={styles.bigNum}>{deliveredToday}</Text>
+          </View>
         </View>
       </View>
 
       {/* Orders list */}
       <View style={styles.listContainer}>
-        <Text style={styles.listTitle}>
-          {activeTab === 'running' ? `${runningOrders.length} Orders to Prepare` : `${pendingRequests.length} New Requests`}
-        </Text>
+        <Text style={styles.listTitle}>{pendingOrders.length} Running Orders</Text>
         <FlatList
-          data={activeTab === 'running' ? runningOrders : pendingRequests}
+          data={pendingOrders}
           keyExtractor={(item) => item._id}
           renderItem={renderOrder}
           contentContainerStyle={{ paddingBottom: 100 }}
@@ -144,7 +118,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
           ListEmptyComponent={
             <View style={styles.emptyBox}>
               <Ionicons name="checkmark-circle" size={48} color={ORANGE} />
-              <Text style={styles.emptyText}>{activeTab === 'running' ? 'All orders done! 🎉' : 'No new requests'}</Text>
+              <Text style={styles.emptyText}>All orders done! 🎉</Text>
             </View>
           }
         />
@@ -153,10 +127,10 @@ export default function ChefOrdersScreen({ navigation }: any) {
       {/* Bottom Nav */}
       <View style={styles.navbar}>
         {[
-          { icon: 'grid-outline', screen: 'ChefHome' },
-          { icon: 'list-outline', screen: 'ChefOrders', active: true },
-          { icon: 'fast-food-outline', screen: 'ChefFoodList' },
-          { icon: 'notifications-outline', screen: 'ChefNotifications' },
+          { icon: 'grid-outline', screen: 'AdminHome' },
+          { icon: 'list-outline', screen: 'AdminOrders', active: true },
+          { icon: 'people-outline', screen: 'AdminUsers' },
+          { icon: 'notifications-outline', screen: 'AdminNotifications' },
         ].map((tab: any, i) => (
           <TouchableOpacity
             key={i}
@@ -182,7 +156,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     backgroundColor: BG,
   },
-  menuBtn: { padding: 4 },
   locationRow: { flex: 1, alignItems: 'center' },
   locationLabel: { fontSize: 10, fontWeight: '700', color: ORANGE, letterSpacing: 1.2 },
   locationName: { fontSize: 14, fontWeight: '700', color: NAVY },
@@ -191,9 +164,8 @@ const styles = StyleSheet.create({
 
   statsBg: { backgroundColor: BG, paddingHorizontal: 20, paddingBottom: 16 },
   statsRow: { flexDirection: 'row', justifyContent: 'space-evenly' },
-  bigStatBox: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 16 },
-  activeTabBox: { backgroundColor: 'rgba(255,122,40,0.08)' },
-  bigNum: { fontSize: 44, fontWeight: '900', color: NAVY, textAlign: 'center' },
+  bigStatBox: { flex: 1, alignItems: 'center' },
+  bigNum: { fontSize: 52, fontWeight: '900', color: NAVY, lineHeight: 56, textAlign: 'center' },
   bigStatLabel: { fontSize: 10, fontWeight: '700', color: GREY, letterSpacing: 0.8, marginBottom: 2, textAlign: 'center' },
 
   listContainer: {
@@ -251,4 +223,3 @@ const styles = StyleSheet.create({
   },
   navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
 });
-

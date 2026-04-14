@@ -31,6 +31,10 @@ const BASIC_INGREDIENTS = [
   { label: 'Garlic', emoji: '🧄', selected: false },
   { label: 'Pappers',emoji: '🌶️', selected: true  },
   { label: 'Ginger', emoji: '🫚', selected: false },
+  { label: 'Egg',    emoji: '🥚', selected: false },
+  { label: 'Butter', emoji: '🧈', selected: false },
+  { label: 'Cheese', emoji: '🧀', selected: false },
+  { label: 'Bread',  emoji: '🍞', selected: false },
 ];
 
 const FRUIT_INGREDIENTS = [
@@ -40,6 +44,10 @@ const FRUIT_INGREDIENTS = [
   { label: 'Broccoli',emoji: '🥦', selected: false },
   { label: 'Orange',  emoji: '🍊', selected: false },
   { label: 'Walnut',  emoji: '🥜', selected: false },
+  { label: 'Banana',   emoji: '🍌', selected: false },
+  { label: 'Grapes',   emoji: '🍇', selected: false },
+  { label: 'Lemon',    emoji: '🍋', selected: false },
+  { label: 'Watermelon',emoji: '🍉', selected: false },
 ];
 
 interface IngRow { label: string; emoji: string; selected: boolean }
@@ -71,6 +79,7 @@ export default function ChefAddItemScreen({ navigation }: any) {
   const [details, setDetails] = useState(
     'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.'
   );
+  const [recipe, setRecipe] = useState('');
   const [images, setImages] = useState<(string | null)[]>([
     'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=300&q=80',
     null,
@@ -78,6 +87,9 @@ export default function ChefAddItemScreen({ navigation }: any) {
   ]);
   const [basicIngs, setBasicIngs] = useState<IngRow[]>(BASIC_INGREDIENTS);
   const [fruitIngs, setFruitIngs] = useState<IngRow[]>(FRUIT_INGREDIENTS);
+
+  const [showAllBasic, setShowAllBasic] = useState(false);
+  const [showAllFruit, setShowAllFruit] = useState(false);
 
   // ── Image picker ────────────────────────────────────────────────────────────
   const pickImage = async (index: number) => {
@@ -120,9 +132,12 @@ export default function ChefAddItemScreen({ navigation }: any) {
     setIsPickup(false);
     setIsDelivery(false);
     setDetails('');
+    setRecipe('');
     setImages([null, null, null]);
     setBasicIngs(BASIC_INGREDIENTS.map((i) => ({ ...i, selected: false })));
     setFruitIngs(FRUIT_INGREDIENTS.map((i) => ({ ...i, selected: false })));
+    setShowAllBasic(false);
+    setShowAllFruit(false);
   };
 
   // ── Save ─────────────────────────────────────────────────────────────────────
@@ -258,7 +273,7 @@ export default function ChefAddItemScreen({ navigation }: any) {
           <FormField label="PRICE">
             <View style={styles.priceRow}>
               <View style={[styles.inputBox, { flex: 1 }]}>
-                <Text style={styles.currencySymbol}>$</Text>
+                <Text style={styles.currencySymbol}>Rs.</Text>
                 <TextInput
                   style={[styles.input, { marginLeft: 4 }]}
                   value={price}
@@ -289,38 +304,54 @@ export default function ChefAddItemScreen({ navigation }: any) {
           {/* Basic row */}
           <View style={styles.ingHeader}>
             <Text style={styles.ingCategory}>Basic</Text>
-            <TouchableOpacity style={styles.seeAllBtn}>
-              <Text style={styles.seeAllText}>See All</Text>
-              <Ionicons name="chevron-down" size={12} color={GREY} />
+            <TouchableOpacity style={styles.seeAllBtn} onPress={() => setShowAllBasic(!showAllBasic)}>
+              <Text style={styles.seeAllText}>{showAllBasic ? 'Show Less' : 'See All'}</Text>
+              <Ionicons name={showAllBasic ? "chevron-up" : "chevron-down"} size={12} color={GREY} />
             </TouchableOpacity>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.ingScroll}
-          >
-            {basicIngs.map((ing, i) => (
-              <IngChip key={i} item={ing} onPress={() => toggleBasic(i)} />
-            ))}
-          </ScrollView>
+          {showAllBasic ? (
+            <View style={styles.ingGrid}>
+              {basicIngs.map((ing, i) => (
+                <IngChip key={i} item={ing} onPress={() => toggleBasic(i)} />
+              ))}
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.ingScroll}
+            >
+              {basicIngs.map((ing, i) => (
+                <IngChip key={i} item={ing} onPress={() => toggleBasic(i)} />
+              ))}
+            </ScrollView>
+          )}
 
           {/* Fruit row */}
           <View style={[styles.ingHeader, { marginTop: 12 }]}>
             <Text style={styles.ingCategory}>Fruit</Text>
-            <TouchableOpacity style={styles.seeAllBtn}>
-              <Text style={styles.seeAllText}>See All</Text>
-              <Ionicons name="chevron-down" size={12} color={GREY} />
+            <TouchableOpacity style={styles.seeAllBtn} onPress={() => setShowAllFruit(!showAllFruit)}>
+              <Text style={styles.seeAllText}>{showAllFruit ? 'Show Less' : 'See All'}</Text>
+              <Ionicons name={showAllFruit ? "chevron-up" : "chevron-down"} size={12} color={GREY} />
             </TouchableOpacity>
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.ingScroll}
-          >
-            {fruitIngs.map((ing, i) => (
-              <IngChip key={i} item={ing} onPress={() => toggleFruit(i)} />
-            ))}
-          </ScrollView>
+          {showAllFruit ? (
+            <View style={styles.ingGrid}>
+              {fruitIngs.map((ing, i) => (
+                <IngChip key={i} item={ing} onPress={() => toggleFruit(i)} />
+              ))}
+            </View>
+          ) : (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.ingScroll}
+            >
+              {fruitIngs.map((ing, i) => (
+                <IngChip key={i} item={ing} onPress={() => toggleFruit(i)} />
+              ))}
+            </ScrollView>
+          )}
 
           {/* ── Details ───────────────────────────────────────────────────── */}
           <FormField label="DETAILS">
@@ -333,6 +364,22 @@ export default function ChefAddItemScreen({ navigation }: any) {
                 placeholderTextColor={GREY}
                 multiline
                 numberOfLines={4}
+                textAlignVertical="top"
+              />
+            </View>
+          </FormField>
+
+          {/* ── Recipe ────────────────────────────────────────────────────── */}
+          <FormField label="RECIPE STEPS">
+            <View style={[styles.inputBox, styles.textAreaBox, { height: 150 }]}>
+              <TextInput
+                style={[styles.input, styles.textArea, { height: 126 }]}
+                value={recipe}
+                onChangeText={setRecipe}
+                placeholder="Enter recipe steps (one step per line)..."
+                placeholderTextColor={GREY}
+                multiline
+                numberOfLines={6}
                 textAlignVertical="top"
               />
             </View>
@@ -473,7 +520,8 @@ const styles = StyleSheet.create({
   seeAllText:  { fontSize: 12, color: GREY },
 
   ingScroll:   { paddingBottom: 8, gap: 6 },
-  ingChipWrap: { alignItems: 'center', marginRight: 12 },
+  ingGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 8 },
+  ingChipWrap: { alignItems: 'center', marginRight: 4 },
   ingCircle: {
     width: 52,
     height: 52,

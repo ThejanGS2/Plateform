@@ -11,6 +11,8 @@ export interface IOrder extends Document {
   totalAmount: number;
   status: string;
   deliveryAddress: string;
+  pickupLocation?: string;
+  dropoffLocation?: string;
   createdAt: Date;
 }
 
@@ -23,8 +25,10 @@ const OrderSchema: Schema = new Schema({
     price: { type: Number, required: true }
   }],
   totalAmount: { type: Number, required: true },
-  status: { type: String, enum: ['PLACED', 'PREPARING', 'DELIVERING', 'DELIVERED'], default: 'PLACED' },
+  status: { type: String, enum: ['pending', 'accepted', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'], default: 'pending' },
   deliveryAddress: { type: String, required: true },
+  pickupLocation: { type: String },
+  dropoffLocation: { type: String },
   createdAt: { type: Date, default: Date.now }
 });
 

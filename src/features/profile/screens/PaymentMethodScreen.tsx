@@ -31,14 +31,14 @@ const MastercardLogo = () => (
   </View>
 );
 
-const PaypalLogo = () => (
-  <View style={{ width: 48, height: 32, borderRadius: 6, backgroundColor: '#003087', justifyContent: 'center', alignItems: 'center' }}>
-    <Text style={{ color: 'white', fontSize: 12, fontWeight: 'bold', fontStyle: 'italic' }}>PayPal</Text>
-  </View>
-);
 
 export default function PaymentMethodScreen({ navigation, route }: any) {
-  const { token, paymentMethods, loadPaymentMethods, setPaymentMethods } = useStore();
+  const { token, cart, paymentMethods, loadPaymentMethods, setPaymentMethods, placeNewOrder } = useStore();
+  const [loading, setLoading] = useState(false);
+  
+  const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
+  const deliveryFee = cart.length > 0 ? 10 : 0;
+  const total = subtotal + deliveryFee;
   const isManageMode = route.params?.mode === 'manage';
   const [selectedMethodId, setSelectedMethodId] = useState(isManageMode ? (paymentMethods[0]?._id || '') : 'cash');
 
@@ -75,8 +75,8 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
     ]);
   };
   const handleCardActions = () => {
-    if (selectedMethodId === 'cash' || selectedMethodId === 'paypal') {
-      Alert.alert('Payment Method', `This is your ${selectedMethodId === 'cash' ? 'Cash' : 'PayPal'} option.`);
+    if (selectedMethodId === 'cash') {
+      Alert.alert('Payment Method', `This is your Cash option.`);
       return;
     }
 
@@ -104,6 +104,23 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
         }
       ]
     );
+  };
+
+  const handlePayAndConfirm = async () => {
+    if (cart.length === 0) {
+      Alert.alert('Empty Cart', 'Please add items to your cart before placing an order.');
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await placeNewOrder();
+      navigation.navigate('PaymentSuccess');
+    } catch (error) {
+      Alert.alert('Order Failed', 'Something went wrong while placing your order. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectedMethod = paymentMethods.find(m => m._id === selectedMethodId) || 
@@ -169,24 +186,7 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
             );
           })}
 
-          {!isManageMode && (
-            <View style={styles.methodWrapper}>
-              <View style={{ position: 'relative' }}>
-                <TouchableOpacity 
-                  style={[styles.methodCard, selectedMethodId === 'paypal' && styles.methodCardActive]}
-                  onPress={() => setSelectedMethodId('paypal')}
-                >
-                  <PaypalLogo />
-                </TouchableOpacity>
-                {selectedMethodId === 'paypal' && (
-                  <View style={styles.checkBadge}>
-                    <Ionicons name="checkmark" size={14} color={Colors.white} />
-                  </View>
-                )}
-              </View>
-              <Text style={styles.methodName}>Paypal</Text>
-            </View>
-          )}
+          {/* Paypal block removed */}
 
         </ScrollView>
 
@@ -195,14 +195,11 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
           <View style={styles.cardInfoLeft}>
             <Text style={styles.cardInfoTitle}>
               {selectedMethodId === 'cash' ? 'Cash on Delivery' : 
-               selectedMethodId === 'paypal' ? 'PayPal Account' : 
                (selectedMethod as any).cardType || 'Credit Card'}
             </Text>
             <View style={styles.cardNumberContainer}>
               {selectedMethodId === 'cash' ? (
                  <Ionicons name="cash" size={20} color="#FF7A28" style={{marginRight: 8}} />
-              ) : selectedMethodId === 'paypal' ? (
-                <Ionicons name="logo-paypal" size={20} color="#003087" style={{marginRight: 8}} />
               ) : (
                 <FontAwesome5 
                   name={(selectedMethod as any).cardType === 'Visa' ? 'cc-visa' : 'cc-mastercard'} 
@@ -213,7 +210,6 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
               )}
               <Text style={styles.cardNumber}>
                 {selectedMethodId === 'cash' ? 'Pay when you receive' : 
-                 selectedMethodId === 'paypal' ? 'vishal@khadok.com' : 
                  `•••• •••• •••• ${(selectedMethod as any).cardNumber?.slice(-4) || 'XXXX'}`}
               </Text>
             </View>
@@ -235,10 +231,14 @@ export default function PaymentMethodScreen({ navigation, route }: any) {
       {!isManageMode && (
         <View style={styles.footer}>
           <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>TOTAL:</Text>
-            <Text style={styles.totalValue}>$96</Text>
+            <Text style={styles.totalValue}>Rs.{total}</Text>
           </View>
-          <AppButton title="PAY & CONFIRM" onPress={() => navigation.navigate('PaymentSuccess')} />
+          <AppButton 
+            title={loading ? "PROCESSING..." : "PAY & CONFIRM"} 
+            onPress={handlePayAndConfirm}
+            loading={loading}
+            disabled={loading}
+          />
         </View>
       )}
     </SafeAreaView>

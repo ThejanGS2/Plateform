@@ -21,7 +21,6 @@ const LIGHT_BG = '#F2F3F7';
 const W = Dimensions.get('window').width;
 const HERO_H = 240;
 
-// ── Ingredient data ──────────────────────────────────────────────────────────
 interface Ingredient {
   label: string;
   emoji: string;
@@ -40,7 +39,6 @@ const INGREDIENTS: Ingredient[] = [
   { label: 'Walnut',  emoji: '🥜' },
 ];
 
-// ── Default recipe steps ───────────────────────────────────────────────────────
 const DEFAULT_RECIPE: string[] = [
   'Marinate chicken with spices, yogurt, and lemon juice for at least 1 hour.',
   'Heat oil in a pan and sauté onions until golden brown.',
@@ -52,7 +50,6 @@ const DEFAULT_RECIPE: string[] = [
   'Garnish with fried onions, fresh coriander and serve hot.',
 ];
 
-// ── Dot indicator ─────────────────────────────────────────────────────────────
 const Dots = ({ count, active }: { count: number; active: number }) => (
   <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
     {Array.from({ length: count }).map((_, i) => (
@@ -69,8 +66,7 @@ const Dots = ({ count, active }: { count: number; active: number }) => (
   </View>
 );
 
-export default function ChefFoodDetailsScreen({ route, navigation }: any) {
-  // Accept item passed from ChefFoodListScreen, fallback to demo data
+export default function AdminFoodDetailsScreen({ route, navigation }: any) {
   const item = route?.params?.item ?? {
     name: 'Chicken Thai Biriyani',
     category: 'Breakfast',
@@ -78,17 +74,17 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
     rating: 4.9,
     reviews: 10,
     pickupType: 'Delivery',
-    location: 'Kentucky 39495',
+    chef: 'Chef Mario',
+    location: 'Kitchen Central, Block 4',
     image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=600&q=80',
     description:
-      'Lorem ipsum dolor sit amet, consetdur Maton adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.',
+      'A carefully crafted dish using premium ingredients sourced fresh daily. Enjoy the authentic flavour with every bite.',
     ingredients: INGREDIENTS,
     recipe: DEFAULT_RECIPE,
   };
 
   const [activeSlide, setActiveSlide] = useState(0);
 
-  // ── Ingredient chip ────────────────────────────────────────────────────────
   const IngredientChip = ({ item: ing }: { item: Ingredient }) => (
     <View style={styles.ingChipWrap}>
       <View style={styles.ingCircle}>
@@ -96,7 +92,7 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
       </View>
       <Text style={styles.ingLabel}>
         {ing.label}
-        {ing.allergy ? '\n(Alergy)' : ''}
+        {ing.allergy ? '\n(Allergy)' : ''}
       </Text>
     </View>
   );
@@ -105,7 +101,7 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
     <SafeAreaView style={styles.safe} edges={['top']}>
       <StatusBar barStyle="dark-content" backgroundColor={WHITE} />
 
-      {/* ── Header ──────────────────────────────────────────────────────── */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation?.goBack?.()}>
           <Ionicons name="chevron-back" size={22} color={NAVY} />
@@ -116,15 +112,13 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {/* ── Hero Image ──────────────────────────────────────────────────── */}
+        {/* Hero Image */}
         <View style={styles.heroWrap}>
           <Image
             source={{ uri: item.image }}
             style={styles.heroImage}
             resizeMode="cover"
           />
-
-          {/* Overlay badges */}
           <View style={styles.heroBadgeRow}>
             <View style={styles.heroBadge}>
               <Text style={styles.heroBadgeText}>{item.category}</Text>
@@ -138,17 +132,17 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        {/* ── Title Row ────────────────────────────────────────────────────── */}
+        {/* Title Row */}
         <View style={styles.titleRow}>
           <Text style={styles.foodName}>{item.name}</Text>
           <Text style={styles.foodPrice}>Rs.{item.price}</Text>
         </View>
 
-        {/* ── Meta Row ─────────────────────────────────────────────────────── */}
+        {/* Chef & Meta Row */}
         <View style={styles.metaRow}>
           <View style={styles.metaLeft}>
             <Ionicons name="location-outline" size={13} color={GREY} />
-            <Text style={styles.metaLocation}>{item.location ?? 'Kentucky 39495'}</Text>
+            <Text style={styles.metaLocation}>{item.location ?? 'Kitchen Central'}</Text>
           </View>
           <View style={styles.metaRight}>
             <Ionicons name="star" size={14} color="#FFB800" />
@@ -157,10 +151,19 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
           </View>
         </View>
 
-        {/* ── Divider ─────────────────────────────────────────────────────── */}
+        {/* Chef badge */}
+        {item.chef && (
+          <View style={styles.chefBadgeRow}>
+            <View style={styles.chefBadge}>
+              <Ionicons name="restaurant-outline" size={13} color={ORANGE} />
+              <Text style={styles.chefBadgeText}>By {item.chef}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.divider} />
 
-        {/* ── Ingredients ──────────────────────────────────────────────────── */}
+        {/* Ingredients */}
         <Text style={styles.sectionTitle}>INGREDIENTS</Text>
         <View style={styles.ingGrid}>
           {(item.ingredients ?? INGREDIENTS).map((ing: Ingredient, i: number) => (
@@ -168,17 +171,15 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
           ))}
         </View>
 
-        {/* ── Divider ─────────────────────────────────────────────────────── */}
         <View style={styles.divider} />
 
-        {/* ── Description ──────────────────────────────────────────────────── */}
+        {/* Description */}
         <Text style={styles.sectionTitle}>Description</Text>
         <Text style={styles.description}>{item.description}</Text>
 
-        {/* ── Divider ─────────────────────────────────────────────────────── */}
         <View style={styles.divider} />
 
-        {/* ── Recipe ────────────────────────────────────────────────────────── */}
+        {/* Recipe */}
         <Text style={styles.sectionTitle}>RECIPE</Text>
         <View style={styles.recipeList}>
           {(item.recipe ?? DEFAULT_RECIPE).map((step: string, i: number) => (
@@ -194,20 +195,20 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
         <View style={{ height: 110 }} />
       </ScrollView>
 
-      {/* ── Bottom Nav ───────────────────────────────────────────────────── */}
+      {/* Bottom Nav */}
       <View style={styles.navbar}>
         {[
-          { icon: 'grid-outline',         screen: 'ChefHome'          },
-          { icon: 'list-outline',          screen: 'ChefOrders'        },
-          { icon: 'fast-food-outline',     screen: 'ChefFoodList', active: true },
-          { icon: 'notifications-outline', screen: 'ChefNotifications' },
+          { icon: 'grid-outline',          screen: 'AdminHome' },
+          { icon: 'list-outline',          screen: 'AdminOrders' },
+          { icon: 'people-outline',        screen: 'AdminUsers' },
+          { icon: 'notifications-outline', screen: 'AdminNotifications' },
         ].map((tab: any, i) => (
           <TouchableOpacity
             key={i}
             style={styles.navItem}
             onPress={() => navigation?.navigate?.(tab.screen)}
           >
-            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : GREY} />
+            <Ionicons name={tab.icon} size={24} color={GREY} />
           </TouchableOpacity>
         ))}
       </View>
@@ -216,10 +217,9 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  safe:  { flex: 1, backgroundColor: WHITE },
+  safe: { flex: 1, backgroundColor: WHITE },
   scroll: { paddingBottom: 20 },
 
-  // Header
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -229,165 +229,109 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
   },
   backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 36, height: 36, borderRadius: 18,
     backgroundColor: LIGHT_BG,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center', alignItems: 'center',
   },
   headerTitle: { fontSize: 17, fontWeight: '700', color: NAVY },
 
-  // Hero
   heroWrap: {
-    marginHorizontal: 16,
-    borderRadius: 20,
-    overflow: 'hidden',
-    height: HERO_H,
-    marginBottom: 20,
+    marginHorizontal: 16, borderRadius: 20,
+    overflow: 'hidden', height: HERO_H, marginBottom: 20,
   },
   heroImage: { width: '100%', height: '100%' },
   heroBadgeRow: {
-    position: 'absolute',
-    bottom: 14,
-    left: 14,
-    right: 14,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    position: 'absolute', bottom: 14, left: 14, right: 14,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
   },
   heroBadge: {
     backgroundColor: 'rgba(255,255,255,0.85)',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6,
   },
   heroBadgeText: { fontSize: 12, fontWeight: '700', color: NAVY },
   heroDots: { alignItems: 'center' },
 
-  // Title / meta
   titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 8,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', paddingHorizontal: 20, marginBottom: 8,
   },
-  foodName:  { fontSize: 18, fontWeight: '800', color: NAVY, flex: 1 },
+  foodName: { fontSize: 18, fontWeight: '800', color: NAVY, flex: 1 },
   foodPrice: { fontSize: 20, fontWeight: '900', color: NAVY },
 
   metaRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 18,
+    flexDirection: 'row', justifyContent: 'space-between',
+    alignItems: 'center', paddingHorizontal: 20, marginBottom: 8,
   },
-  metaLeft:      { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  metaLocation:  { fontSize: 12, color: GREY },
-  metaRight:     { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  ratingText:    { fontSize: 13, fontWeight: '700', color: NAVY },
-  reviewText:    { fontSize: 12, color: GREY },
+  metaLeft: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  metaLocation: { fontSize: 12, color: GREY },
+  metaRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  ratingText: { fontSize: 13, fontWeight: '700', color: NAVY },
+  reviewText: { fontSize: 12, color: GREY },
+
+  chefBadgeRow: { paddingHorizontal: 20, marginBottom: 14 },
+  chefBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    alignSelf: 'flex-start',
+    backgroundColor: ORANGE + '15',
+    borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5,
+  },
+  chefBadgeText: { fontSize: 12, fontWeight: '700', color: ORANGE },
 
   divider: {
-    height: 1,
-    backgroundColor: '#F0F0F0',
-    marginHorizontal: 20,
-    marginBottom: 18,
+    height: 1, backgroundColor: '#F0F0F0',
+    marginHorizontal: 20, marginBottom: 18,
   },
 
-  // Section titles
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: NAVY,
-    letterSpacing: 0.6,
-    paddingHorizontal: 20,
-    marginBottom: 16,
+    fontSize: 13, fontWeight: '800',
+    color: NAVY, letterSpacing: 0.6,
+    paddingHorizontal: 20, marginBottom: 16,
   },
 
-  // Ingredients
   ingGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 12,
-    gap: 4,
-    marginBottom: 20,
+    flexDirection: 'row', flexWrap: 'wrap',
+    paddingHorizontal: 12, gap: 4, marginBottom: 20,
   },
   ingChipWrap: {
-    width: (W - 40) / 5,
-    alignItems: 'center',
-    marginBottom: 14,
+    width: (W - 40) / 5, alignItems: 'center', marginBottom: 14,
   },
   ingCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 52, height: 52, borderRadius: 26,
     backgroundColor: ORANGE + '18',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 6,
+    justifyContent: 'center', alignItems: 'center', marginBottom: 6,
   },
   ingEmoji: { fontSize: 22 },
   ingLabel: {
-    fontSize: 10,
-    color: NAVY,
-    textAlign: 'center',
-    fontWeight: '500',
-    lineHeight: 14,
+    fontSize: 10, color: NAVY,
+    textAlign: 'center', fontWeight: '500', lineHeight: 14,
   },
 
-  // Description
   description: {
-    fontSize: 13,
-    color: GREY,
-    lineHeight: 21,
-    paddingHorizontal: 20,
+    fontSize: 13, color: GREY, lineHeight: 21, paddingHorizontal: 20,
   },
 
-  // Recipe
-  recipeList: {
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 20,
-  },
+  recipeList: { paddingHorizontal: 20, gap: 12, marginBottom: 20 },
   recipeStep: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    backgroundColor: LIGHT_BG,
-    borderRadius: 14,
-    padding: 14,
+    flexDirection: 'row', alignItems: 'flex-start',
+    gap: 12, backgroundColor: LIGHT_BG, borderRadius: 14, padding: 14,
   },
   stepNumCircle: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 28, height: 28, borderRadius: 14,
     backgroundColor: ORANGE,
-    justifyContent: 'center',
-    alignItems: 'center',
-    flexShrink: 0,
-    marginTop: 1,
+    justifyContent: 'center', alignItems: 'center',
+    flexShrink: 0, marginTop: 1,
   },
   stepNum: { fontSize: 13, fontWeight: '800', color: WHITE },
   stepText: { fontSize: 13, color: NAVY, lineHeight: 20, flex: 1 },
 
-  // Bottom nav
   navbar: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 20, left: 20, right: 20,
     height: 64,
     backgroundColor: WHITE,
     borderRadius: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-evenly',
-    shadowColor: '#000',
-    shadowOpacity: 0.12,
-    shadowRadius: 20,
-    elevation: 12,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-evenly',
+    shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 20, elevation: 12,
     paddingHorizontal: 10,
   },
   navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },

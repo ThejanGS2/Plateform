@@ -77,35 +77,52 @@ export default function AddressesScreen({ navigation }: any) {
         </View>
 
         {/* Dynamic Address Cards */}
-        {addresses.map((address) => (
-          <View key={address._id} style={styles.addressCard}>
-            <View style={styles.iconContainer}>
-              <Ionicons name={getIconForLabel(address.label) as any} size={24} color={address.label?.toUpperCase() === 'WORK' ? '#5C61F4' : Colors.primary} />
-            </View>
-            <View style={styles.cardInfo}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{address.label?.toUpperCase()}</Text>
-                <View style={styles.cardActions}>
-                  <TouchableOpacity 
-                    style={styles.actionIcon} 
-                    onPress={() => navigation.navigate('EditAddress', { address })}
-                  >
-                    <Ionicons name="create-outline" size={20} color={Colors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.actionIcon} 
-                    onPress={() => handleDelete(address._id)}
-                  >
-                    <Ionicons name="trash-outline" size={20} color={Colors.primary} />
-                  </TouchableOpacity>
-                </View>
+        {addresses.map((address) => {
+          const fullAddr = `${address.street}, ${address.city}`;
+          const isSelected = currentAddress === fullAddr;
+          return (
+            <TouchableOpacity 
+              key={address._id} 
+              style={[styles.addressCard, isSelected && { borderColor: Colors.primary, borderWidth: 1 }]}
+              onPress={() => {
+                useStore.getState().setCurrentAddress(fullAddr);
+                navigation.goBack();
+              }}
+            >
+              <View style={styles.iconContainer}>
+                <Ionicons name={getIconForLabel(address.label) as any} size={24} color={address.label?.toUpperCase() === 'WORK' ? '#5C61F4' : Colors.primary} />
               </View>
-              <Text style={styles.cardAddress}>
-                {address.apartment ? `${address.apartment}, ` : ''}{address.street}, {address.city}{address.postCode ? ` ${address.postCode}` : ''}
-              </Text>
-            </View>
-          </View>
-        ))}
+              <View style={styles.cardInfo}>
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>{address.label?.toUpperCase()}</Text>
+                  <View style={styles.cardActions}>
+                    <TouchableOpacity 
+                      style={styles.actionIcon} 
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        navigation.navigate('EditAddress', { address });
+                      }}
+                    >
+                      <Ionicons name="create-outline" size={20} color={Colors.primary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.actionIcon} 
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        handleDelete(address._id);
+                      }}
+                    >
+                      <Ionicons name="trash-outline" size={20} color={Colors.primary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+                <Text style={styles.cardAddress}>
+                  {address.apartment ? `${address.apartment}, ` : ''}{address.street}, {address.city}{address.postCode ? ` ${address.postCode}` : ''}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          );
+        })}
 
         {addresses.length === 0 && (
           <View style={styles.emptyContainer}>

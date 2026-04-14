@@ -66,7 +66,7 @@ export default function OrderHistoryScreen({ navigation }: any) {
             
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Total:</Text>
-              <Text style={styles.totalValue}>${order.total.toFixed(2)}</Text>
+              <Text style={styles.totalValue}>Rs.{order.total.toFixed(2)}</Text>
             </View>
 
             <View style={styles.actionContainer}>

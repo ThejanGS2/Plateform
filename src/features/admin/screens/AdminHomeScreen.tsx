@@ -1,123 +1,365 @@
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView,
-  TouchableOpacity, StatusBar
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '@/store/useStore';
 
-const ACCENT = '#FF7A28';
-const NAVY   = '#1C1C2E';
+const ORANGE = '#FF7A28';
+const NAVY = '#1C1C2E';
+const LIGHT_BG = '#F2F3F7';
+const WHITE = '#FFFFFF';
+const GREY_TEXT = '#9E9E9E';
 
-const StatCard = ({ icon, label, value, color }: any) => (
-  <View style={[styles.statCard, { borderLeftColor: color }]}>
-    <Ionicons name={icon} size={22} color={color} />
-    <Text style={styles.statValue}>{value}</Text>
-    <Text style={styles.statLabel}>{label}</Text>
-  </View>
-);
+const POPULAR = [
+  {
+    name: 'Butter Chicken',
+    uri: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=300&q=80',
+    orders: 124,
+  },
+  {
+    name: 'Spring Rolls',
+    uri: 'https://images.unsplash.com/photo-1548869190-2a99cf3b5a16?w=300&q=80',
+    orders: 98,
+  },
+];
 
-const ActionButton = ({ icon, label, color, onPress }: any) => (
-  <TouchableOpacity style={[styles.actionBtn, { backgroundColor: color }]} onPress={onPress}>
-    <Ionicons name={icon} size={26} color="#fff" />
-    <Text style={styles.actionLabel}>{label}</Text>
-  </TouchableOpacity>
-);
+const TABS = [
+  { icon: 'grid-outline',     label: 'Dashboard', screen: 'AdminHome'          },
+  { icon: 'list-outline',     label: 'Orders',    screen: 'AdminOrders'        },
+  { icon: 'people-outline',   label: 'Users',     screen: 'AdminUsers'         },
+  { icon: 'notifications-outline', label: 'Alerts', screen: 'AdminNotifications' },
+];
 
 export default function AdminHomeScreen({ navigation }: any) {
-  const { user, logout } = useStore();
+  const { user, orders, loadOrders } = useStore();
+  const [activeTab, setActiveTab] = useState(0);
 
-  const handleLogout = () => {
-    logout();
-  };
+  useEffect(() => {
+    loadOrders();
+  }, []);
 
-  const now = new Date();
-  const hour = now.getHours();
-  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab(0);
+      loadOrders(); // Refresh on focus
+    }, [])
+  );
+
+  const totalOrders = orders.length;
+  const pendingCount = orders.filter(o => o.status === 'pending').length;
+  const revenueToday = orders
+    .filter(o => o.status === 'delivered') // Improved: should filter by date too if backend supports
+    .reduce((acc, o) => acc + o.totalAmount, 0);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
-      <StatusBar barStyle="light-content" backgroundColor={NAVY} />
+      <StatusBar barStyle="dark-content" backgroundColor={LIGHT_BG} />
 
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>{greeting},</Text>
-          <Text style={styles.name}>{user?.fullName ?? 'Admin'} 👋</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <View style={styles.rolePill}>
-            <Text style={styles.roleText}>ADMIN</Text>
+        <View style={styles.menuBtn} />
+
+        <View style={styles.locationRow}>
+          <Text style={styles.locationLabel}>ADMIN PANEL</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text style={styles.locationName}>{user?.fullName ?? 'Administrator'}</Text>
+            <Ionicons name="chevron-down" size={14} color={NAVY} />
           </View>
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutBtn}>
-            <Ionicons name="log-out-outline" size={22} color="#fff" />
-          </TouchableOpacity>
         </View>
+
+        {/* Avatar → navigates to AdminProfile */}
+        <TouchableOpacity
+          style={styles.avatarWrap}
+          onPress={() => navigation?.navigate?.('AdminProfile')}
+        >
+          <Image
+            source={{ uri: user?.avatarUrl || 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=200&q=80' }}
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Stats Row 1 */}
+        <View style={styles.statsRow}>
+          <TouchableOpacity style={styles.statCard} onPress={() => navigation?.navigate?.('AdminOrders')}>
+            <View style={styles.statCardHeader}>
+              <Text style={styles.statLabel}>TOTAL ORDERS</Text>
+              <Ionicons name="arrow-forward" size={14} color={ORANGE} />
+            </View>
+            <Text style={styles.statNumber}>{totalOrders}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.statCard} onPress={() => navigation?.navigate?.('AdminOrders')}>
+            <Text style={styles.statLabel}>PENDING</Text>
+            <Text style={styles.statNumber}>{pendingCount}</Text>
+          </TouchableOpacity>
+        </View>
 
-        {/* Stats */}
-        <Text style={styles.sectionTitle}>Today's Overview</Text>
-        <View style={styles.statsGrid}>
-          <StatCard icon="bag-handle"    label="Orders"      value="124"   color={ACCENT} />
-          <StatCard icon="people"        label="Users"       value="1.2k"  color="#4C8EFF" />
-          <StatCard icon="cash"          label="Revenue"     value="$3.4k" color="#2DB87E" />
-          <StatCard icon="bicycle"       label="Deliveries"  value="38"    color="#A855F7" />
+        {/* Stats Row 2 */}
+        <View style={styles.statsRow}>
+          <TouchableOpacity style={[styles.statCard, { borderLeftWidth: 3, borderLeftColor: '#4C8EFF' }]}
+            onPress={() => navigation?.navigate?.('AdminUsers')}>
+            <View style={styles.statCardHeader}>
+              <Text style={styles.statLabel}>TOTAL USERS</Text>
+              <Ionicons name="arrow-forward" size={14} color="#4C8EFF" />
+            </View>
+            <Text style={[styles.statNumber, { color: '#4C8EFF' }]}>0</Text>
+          </TouchableOpacity>
+          <View style={[styles.statCard, { borderLeftWidth: 3, borderLeftColor: '#2DB87E' }]}>
+            <Text style={styles.statLabel}>TOTAL REVENUE</Text>
+            <Text style={[styles.statNumber, { color: '#2DB87E' }]}>Rs.{revenueToday.toLocaleString()}</Text>
+          </View>
+        </View>
+
+        {/* Reviews */}
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Platform Rating</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>See All Reviews</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.reviewRow}>
+            <Ionicons name="star" size={22} color="#FFB800" />
+            <Text style={styles.ratingNum}>4.8</Text>
+            <Text style={styles.ratingMeta}>  Total 512 Reviews</Text>
+          </View>
+        </View>
+
+        {/* Popular Items */}
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Popular Items This Week</Text>
+            <TouchableOpacity>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.popularGrid}>
+            {POPULAR.map((item, i) => (
+              <View key={i} style={styles.popularCard}>
+                <Image source={{ uri: item.uri }} style={styles.popularImage} resizeMode="cover" />
+                <View style={styles.popularOverlay}>
+                  <Text style={styles.popularName} numberOfLines={1}>{item.name}</Text>
+                  <Text style={styles.popularOrders}>{item.orders} orders</Text>
+                </View>
+              </View>
+            ))}
+          </View>
         </View>
 
         {/* Quick Actions */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.actionsGrid}>
-          <ActionButton icon="people"      label="Users"    color="#4C8EFF" />
-          <ActionButton icon="restaurant"  label="Menu"     color={ACCENT}  />
-          <ActionButton icon="receipt"     label="Orders"   color="#2DB87E" />
-          <ActionButton icon="bar-chart"   label="Reports"  color="#A855F7" />
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Quick Actions</Text>
+          </View>
+          <View style={styles.actionsGrid}>
+            {[
+              { icon: 'people-outline',      label: 'Users',     color: '#4C8EFF', screen: 'AdminUsers'    },
+              { icon: 'fast-food-outline',   label: 'Menu',      color: ORANGE,    screen: 'AdminMenu'     },
+              { icon: 'list-outline',        label: 'Orders',    color: '#2DB87E', screen: 'AdminOrders'   },
+              { icon: 'bar-chart-outline',   label: 'Reports',   color: '#A855F7', screen: 'AdminReports'  },
+            ].map((a, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.actionBtn, { backgroundColor: a.color }]}
+                onPress={() => navigation?.navigate?.(a.screen)}
+              >
+                <Ionicons name={a.icon as any} size={26} color={WHITE} />
+                <Text style={styles.actionLabel}>{a.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Recent Activity */}
-        <Text style={styles.sectionTitle}>Recent Activity</Text>
-        {[
-          { icon: 'person-add',     text: 'New user registered',       time: '2m ago',  color: '#4C8EFF' },
-          { icon: 'bag-check',      text: 'Order #1042 completed',     time: '5m ago',  color: '#2DB87E' },
-          { icon: 'warning',        text: 'Low stock: Chicken Burger', time: '18m ago', color: ACCENT },
-          { icon: 'bicycle',        text: 'Driver #7 went offline',    time: '30m ago', color: '#A855F7' },
-        ].map((item, i) => (
-          <View key={i} style={styles.activityRow}>
-            <View style={[styles.activityIcon, { backgroundColor: item.color + '20' }]}>
-              <Ionicons name={item.icon as any} size={18} color={item.color} />
-            </View>
-            <Text style={styles.activityText} numberOfLines={1}>{item.text}</Text>
-            <Text style={styles.activityTime}>{item.time}</Text>
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Recent Activity</Text>
           </View>
-        ))}
+          {[
+            { icon: 'person-add', text: 'New user registered', time: '2m ago', color: '#4C8EFF' },
+            { icon: 'bag-check', text: 'Order #1042 completed', time: '5m ago', color: '#2DB87E' },
+            { icon: 'warning', text: 'Low stock: Chicken Burger', time: '18m ago', color: ORANGE },
+            { icon: 'bicycle', text: 'Driver #7 went offline', time: '30m ago', color: '#A855F7' },
+          ].map((item, i) => (
+            <View key={i} style={styles.activityRow}>
+              <View style={[styles.activityIcon, { backgroundColor: item.color + '20' }]}>
+                <Ionicons name={item.icon as any} size={16} color={item.color} />
+              </View>
+              <Text style={styles.activityText} numberOfLines={1}>{item.text}</Text>
+              <Text style={styles.activityTime}>{item.time}</Text>
+            </View>
+          ))}
+        </View>
 
+        <View style={{ height: 100 }} />
       </ScrollView>
+      {/* FAB — Add New Item */}
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={() => navigation?.navigate?.('AdminAddItem')}
+      >
+        <Ionicons name="add" size={28} color={WHITE} />
+      </TouchableOpacity>
+
+      {/* Bottom Nav */}
+      <View style={styles.navbar}>
+        {TABS.map((tab, i) => {
+          const isActive = activeTab === i;
+          return (
+            <TouchableOpacity
+              key={i}
+              style={styles.navItem}
+              onPress={() => {
+                setActiveTab(i);
+                if (tab.screen !== 'AdminHome') navigation?.navigate?.(tab.screen);
+              }}
+            >
+              <Ionicons name={tab.icon as any} size={24} color={isActive ? ORANGE : GREY_TEXT} />
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe:           { flex: 1, backgroundColor: NAVY },
-  header:         { backgroundColor: NAVY, paddingHorizontal: 24, paddingTop: 12, paddingBottom: 24, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  greeting:       { color: 'rgba(255,255,255,0.6)', fontSize: 14 },
-  name:           { color: '#fff', fontSize: 22, fontWeight: 'bold', marginTop: 2 },
-  headerRight:    { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  rolePill:       { backgroundColor: ACCENT, borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4 },
-  roleText:       { color: '#fff', fontSize: 11, fontWeight: 'bold', letterSpacing: 1 },
-  logoutBtn:      { padding: 6 },
-  scroll:         { backgroundColor: '#F5F7FB', borderTopLeftRadius: 28, borderTopRightRadius: 28, padding: 24, paddingBottom: 40 },
-  sectionTitle:   { fontSize: 16, fontWeight: '700', color: '#1C1C2E', marginBottom: 14, marginTop: 8 },
-  statsGrid:      { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  statCard:       { backgroundColor: '#fff', borderRadius: 14, padding: 16, width: '47%', borderLeftWidth: 4, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, elevation: 2 },
-  statValue:      { fontSize: 22, fontWeight: 'bold', color: '#1C1C2E', marginTop: 8 },
-  statLabel:      { fontSize: 12, color: '#8E8E93', marginTop: 2 },
-  actionsGrid:    { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 24 },
-  actionBtn:      { borderRadius: 16, padding: 20, width: '47%', alignItems: 'center', gap: 8 },
-  actionLabel:    { color: '#fff', fontWeight: '700', fontSize: 13 },
-  activityRow:    { flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, padding: 14, marginBottom: 10, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6, elevation: 1 },
-  activityIcon:   { width: 36, height: 36, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  activityText:   { flex: 1, fontSize: 14, color: '#1C1C2E' },
-  activityTime:   { fontSize: 12, color: '#8E8E93', marginLeft: 8 },
+  safe: { flex: 1, backgroundColor: LIGHT_BG },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    backgroundColor: LIGHT_BG,
+  },
+  menuBtn: { width: 32 },
+  locationRow: { flex: 1, alignItems: 'center' },
+  locationLabel: { fontSize: 10, fontWeight: '700', color: ORANGE, letterSpacing: 1.2 },
+  locationName: { fontSize: 14, fontWeight: '700', color: NAVY },
+  avatarWrap: { width: 40, height: 40, borderRadius: 20, overflow: 'hidden' },
+  avatar: { width: 40, height: 40 },
+
+  scroll: { flex: 1 },
+  scrollContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20 },
+
+  statsRow: { flexDirection: 'row', gap: 14, marginBottom: 14 },
+  statCard: {
+    flex: 1,
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    paddingVertical: 20,
+    paddingHorizontal: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 10,
+    elevation: 3,
+  },
+  statNumber: { fontSize: 38, fontWeight: '800', color: NAVY, lineHeight: 44, marginTop: 6 },
+  statCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  statLabel: { fontSize: 10, fontWeight: '700', color: GREY_TEXT, letterSpacing: 0.8, marginTop: 4 },
+
+  card: {
+    backgroundColor: WHITE,
+    borderRadius: 18,
+    padding: 18,
+    marginBottom: 14,
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  rowBetween: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: '700', color: NAVY },
+  seeAll: { fontSize: 13, color: ORANGE, fontWeight: '600' },
+
+  reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  ratingNum: { fontSize: 22, fontWeight: '800', color: NAVY },
+  ratingMeta: { fontSize: 13, color: GREY_TEXT },
+
+  popularGrid: { flexDirection: 'row', gap: 12 },
+  popularCard: { flex: 1, height: 120, borderRadius: 14, overflow: 'hidden', backgroundColor: LIGHT_BG },
+  popularImage: { width: '100%', height: '100%' },
+  popularOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)', paddingHorizontal: 8, paddingVertical: 6,
+  },
+  popularName: { color: WHITE, fontWeight: '700', fontSize: 11 },
+  popularOrders: { color: 'rgba(255,255,255,0.8)', fontSize: 10, marginTop: 1 },
+
+  activityRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F0F0F0',
+    gap: 12,
+  },
+  activityIcon: {
+    width: 32, height: 32, borderRadius: 10,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  activityText: { flex: 1, fontSize: 13, color: NAVY, fontWeight: '500' },
+  activityTime: { fontSize: 11, color: GREY_TEXT },
+
+  actionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  actionBtn: {
+    borderRadius: 16,
+    padding: 20,
+    width: '47%',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionLabel: { color: WHITE, fontWeight: '700', fontSize: 13 },
+
+  fab: {
+    position: 'absolute',
+    bottom: 100,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: ORANGE,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: ORANGE,
+    shadowOpacity: 0.45,
+    shadowRadius: 12,
+    elevation: 10,
+    zIndex: 999,
+  },
+
+  navbar: {
+    position: 'absolute',
+    bottom: 20, left: 20, right: 20,
+    height: 64,
+    backgroundColor: WHITE,
+    borderRadius: 32,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-evenly',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 12,
+    paddingHorizontal: 10,
+  },
+  navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
 });

@@ -4,7 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 
+import { useStore } from '@/store/useStore';
+
 export default function PaymentBreakdownScreen({ navigation }: any) {
+  const { cart } = useStore();
+  
+  const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
+  const deliveryFee = cart.length > 0 ? 10 : 0;
+  const total = subtotal + deliveryFee;
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -17,35 +25,29 @@ export default function PaymentBreakdownScreen({ navigation }: any) {
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
-          <View style={styles.row}>
-            <Text style={styles.label}>Pizza Calzone European (2)</Text>
-            <Text style={styles.value}>$64.00</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Pizza Calzone European (1)</Text>
-            <Text style={styles.value}>$32.00</Text>
-          </View>
+          {cart.map((item) => (
+            <View key={`${item.food._id}-${item.size}`} style={styles.row}>
+              <Text style={styles.label}>{item.food.name} ({item.qty})</Text>
+              <Text style={styles.value}>Rs.{item.food.price * item.qty}</Text>
+            </View>
+          ))}
           
           <View style={styles.divider} />
           
-          <View style={styles.row}>
+          <View style={[styles.row, { marginTop: 8 }]}>
             <Text style={styles.label}>Subtotal</Text>
-            <Text style={styles.value}>$96.00</Text>
+            <Text style={styles.value}>Rs.{subtotal}</Text>
           </View>
           <View style={styles.row}>
             <Text style={styles.label}>Delivery Fee</Text>
-            <Text style={styles.value}>$0.00</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.label}>Tax</Text>
-            <Text style={styles.value}>$0.00</Text>
+            <Text style={styles.value}>Rs.{deliveryFee}</Text>
           </View>
           
           <View style={styles.divider} />
           
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>$96.00</Text>
+            <Text style={styles.totalValue}>Rs.{total}</Text>
           </View>
         </View>
       </ScrollView>

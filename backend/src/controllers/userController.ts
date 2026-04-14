@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { AuthRequest } from '../middleware/authMiddleware';
 import User from '../models/User';
 
@@ -130,3 +130,13 @@ export const removePaymentMethod = async (req: AuthRequest, res: Response) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+// Admin: Get all users
+export const listAllUsers = async (req: AuthRequest, res: Response) => {
+  try {
+    const users = await User.find().select('-password');
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

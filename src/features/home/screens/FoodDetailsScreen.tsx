@@ -1,30 +1,63 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, Animated, PanResponder } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
+import { useStore } from '@/store/useStore';
 
-export default function FoodDetailsScreen({ navigation }: any) {
-  const [size, setSize] = useState('14"');
-  const [qty, setQty] = useState(2);
+export default function FoodDetailsScreen({ route, navigation }: any) {
+  const { foodId } = route.params;
+  const { foods, addToCart } = useStore();
   
-  const [ingredients, setIngredients] = useState([
-    { id: '1', icon: 'shaker-outline', qty: 1 },
-    { id: '2', icon: 'food-drumstick-outline', qty: 1 },
-    { id: '3', icon: 'leaf', qty: 1 },
-    { id: '4', icon: 'mushroom-outline', qty: 1 },
-    { id: '5', icon: 'chili-mild', qty: 1 },
+  const food = foods.find(f => f._id === foodId);
+  
+  const [size, setSize] = useState('14"');
+  const [qty, setQty] = useState(1);
+  
+  if (!food) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <Text style={{ textAlign: 'center', marginTop: 100 }}>Food not found</Text>
+        <AppButton title="Go Back" onPress={() => navigation.goBack()} />
+      </SafeAreaView>
+    );
+  }
+
+  const [ingredients] = useState([
+    { id: '1', icon: 'shaker-outline', name: 'Salt' },
+    { id: '2', icon: 'food-drumstick-outline', name: 'Meat' },
+    { id: '3', icon: 'leaf', name: 'Herbs' },
+    { id: '4', icon: 'mushroom-outline', name: 'Mushroom' },
+    { id: '5', icon: 'chili-mild', name: 'Chili' },
   ]);
 
-  const toggleIngredientQty = (id: string) => {
-    setIngredients(prev => prev.map(ing => {
-      if (ing.id === id) {
-        return { ...ing, qty: ing.qty >= 3 ? 1 : ing.qty + 1 };
-      }
-      return ing;
-    }));
+  const handleAddToCart = () => {
+    addToCart(food, size, qty);
+    navigation.navigate('Cart');
   };
+
+  // Animation for "Drag to view full picture"
+  const pan = useRef(new Animated.ValueXY()).current;
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (e, gestureState) => {
+        // Only allow dragging down (y > 0)
+        if (gestureState.dy > 0) {
+          pan.setValue({ x: 0, y: gestureState.dy });
+        }
+      },
+      onPanResponderRelease: () => {
+        Animated.spring(pan, {
+          toValue: { x: 0, y: 0 },
+          useNativeDriver: false,
+          friction: 5,
+        }).start();
+      },
+    })
+  ).current;
 
   return (
     <View style={styles.container}>
@@ -42,9 +75,16 @@ export default function FoodDetailsScreen({ navigation }: any) {
         
         {/* Hero Image Container */}
         <View style={styles.heroContainer}>
-          <View style={styles.heroBackground}>
-             <Ionicons name="pizza" size={140} color={Colors.white} style={{opacity: 0.9}} />
-          </View>
+          <View style={styles.heroBackground} />
+          <Animated.Image 
+            source={{ uri: food.imageUrl }} 
+            style={[
+              styles.heroImage, 
+              { transform: pan.getTranslateTransform() }
+            ]} 
+            resizeMode="cover" 
+            {...panResponder.panHandlers}
+          />
           <TouchableOpacity style={styles.favoriteButton}>
             <Ionicons name="heart-outline" size={20} color={Colors.white} />
           </TouchableOpacity>
@@ -52,8 +92,8 @@ export default function FoodDetailsScreen({ navigation }: any) {
 
         <View style={styles.contentPadding}>
           {/* Details */}
-          <Text style={styles.foodTitle}>Pizza Calzone European</Text>
-          <Text style={styles.foodDesc}>Prosciutto e funghi is a pizza variety that is topped with tomato sauce.</Text>
+          <Text style={styles.foodTitle}>{food.name}</Text>
+          <Text style={styles.foodDesc}>{food.description || 'No description available for this item.'}</Text>
 
           {/* Stats */}
           <View style={styles.statsRow}>
@@ -91,16 +131,12 @@ export default function FoodDetailsScreen({ navigation }: any) {
           <Text style={[styles.sectionLabel, { marginTop: 32, marginBottom: 16 }]}>INGREDIENTS</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.ingredientsScroll}>
             {ingredients.map(ing => (
-              <TouchableOpacity key={ing.id} style={styles.ingredientContainer} onPress={() => toggleIngredientQty(ing.id)}>
+              <View key={ing.id} style={styles.ingredientContainer}>
                 <View style={styles.ingredientCircle}>
                   <MaterialCommunityIcons name={ing.icon as any} size={26} color="#FF7A28" />
                 </View>
-                {ing.qty > 1 && (
-                  <View style={styles.ingredientBadge}>
-                    <Text style={styles.ingredientBadgeText}>x{ing.qty}</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
+                <Text style={{ fontSize: 10, color: '#A0A5BA', textAlign: 'center', marginTop: 4 }}>{ing.name}</Text>
+              </View>
             ))}
           </ScrollView>
         </View>
@@ -110,14 +146,14 @@ export default function FoodDetailsScreen({ navigation }: any) {
       {/* Footer / Bottom Sheet */}
       <View style={styles.footerContainer}>
         <View style={styles.footerTopRow}>
-          <Text style={styles.priceText}>$32</Text>
+          <Text style={styles.priceText}>Rs.{food.price * qty}</Text>
           <View style={styles.qtyBox}>
             <TouchableOpacity style={styles.qtyBtn} onPress={() => setQty(Math.max(1, qty-1))}><Ionicons name="remove" size={16} color={Colors.white}/></TouchableOpacity>
             <Text style={styles.qtyValue}>{qty}</Text>
             <TouchableOpacity style={styles.qtyBtn} onPress={() => setQty(qty+1)}><Ionicons name="add" size={16} color={Colors.white}/></TouchableOpacity>
           </View>
         </View>
-        <AppButton title="ADD TO CART" onPress={() => navigation.navigate('Cart')} />
+        <AppButton title="ADD TO CART" onPress={handleAddToCart} />
       </View>
     </View>
   );
@@ -131,9 +167,51 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 18, fontWeight: '600', color: Colors.text },
   
   scrollArea: { flex: 1 },
-  heroContainer: { paddingHorizontal: 24, marginTop: 16, position: 'relative' },
-  heroBackground: { backgroundColor: '#FFD29F', borderRadius: 30, height: 200, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-  favoriteButton: { position: 'absolute', bottom: 16, right: 40, width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.4)', justifyContent: 'center', alignItems: 'center' },
+  heroContainer: { 
+    marginHorizontal: 24, 
+    marginTop: 40, 
+    position: 'relative', 
+    height: 260, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  heroBackground: { 
+    position: 'absolute',
+    width: '100%',
+    height: 160,
+    backgroundColor: '#FFD29F', 
+    borderRadius: 30, 
+    bottom: 0,
+  },
+  heroImage: { 
+    width: '100%', 
+    height: 240, 
+    position: 'absolute', 
+    top: 0, // Show full image
+    zIndex: 5,
+    borderRadius: 40, 
+    borderWidth: 5,
+    borderColor: Colors.white,
+    backgroundColor: '#FFFFFF',
+    // Realistic shadow for the sticker card
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 8,
+  },
+  favoriteButton: { 
+    position: 'absolute', 
+    bottom: 10, 
+    right: 40, 
+    width: 44, 
+    height: 44, 
+    borderRadius: 22, 
+    backgroundColor: 'rgba(255,255,255,0.4)', 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    zIndex: 10,
+  },
   
   contentPadding: { paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 },
   

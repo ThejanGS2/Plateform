@@ -16,7 +16,7 @@ export const placeOrder = async (req: AuthRequest, res: Response) => {
       totalAmount,
       deliveryAddress,
       items, // Expecting array of { food, quantity, size, price }
-      status: 'PLACED'
+      status: 'pending'
     });
     
     res.status(201).json(newOrder);
@@ -52,6 +52,40 @@ export const getOrderStatus = async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Order not found' });
     }
     res.json({ status: order.status });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const getAllOrders = async (req: AuthRequest, res: Response) => {
+  const { status } = req.query;
+  try {
+    const filter = status ? { status } : {};
+    const orders = await Order.find(filter)
+      .populate('items.food')
+      .populate('user', 'fullName email')
+      .sort({ createdAt: -1 });
+    res.json(orders);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+export const updateOrderStatus = async (req: AuthRequest, res: Response) => {
+  const { id } = req.params;
+  const { status, pickupLocation, dropoffLocation } = req.body;
+  try {
+    const updatedOrder = await Order.findByIdAndUpdate(
+      id,
+      { status, pickupLocation, dropoffLocation },
+      { new: true }
+    );
+    if (!updatedOrder) {
+      return res.status(404).json({ message: 'Order not found' });
+    }
+    res.json(updatedOrder);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Server error' });

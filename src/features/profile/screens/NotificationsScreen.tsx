@@ -34,7 +34,7 @@ export default function NotificationsScreen({ navigation }: any) {
           </View>
           <View style={styles.cardInfo}>
             <Text style={styles.cardTitle}>Payment Confirmed</Text>
-            <Text style={styles.cardText}>Successfully processed $96 for your recent order.</Text>
+            <Text style={styles.cardText}>Successfully processed Rs.96 for your recent order.</Text>
             <Text style={styles.timeText}>Yesterday</Text>
           </View>
         </View>

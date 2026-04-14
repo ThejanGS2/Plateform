@@ -1,30 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { useStore } from '@/store/useStore';
 
-const CATEGORIES = [
-  { id: '1', name: 'All', icon: '🔥' },
-  { id: '2', name: 'Hot Dog', icon: '🌭' },
-  { id: '3', name: 'Burger', icon: '🍔' },
-  { id: '4', name: 'Pizza', icon: '🍕' },
-];
-
-const AVAILABLE_FOODS = [
-  { id: '1', name: 'Pizza Calzone European', restaurant: 'Uttora Coffe House', price: 32, rating: 4.7, category: 'Pizza', icon: 'pizza' },
-  { id: '2', name: 'Spicy Chili Hot Dog', restaurant: 'NYC Grill', price: 12, rating: 4.5, category: 'Hot Dog', icon: 'fast-food' },
-  { id: '3', name: 'Beef Double Burger', restaurant: 'Burger King', price: 18, rating: 4.8, category: 'Burger', icon: 'fast-food' },
-  { id: '4', name: 'Classic Margherita', restaurant: 'Italiano', price: 28, rating: 4.6, category: 'Pizza', icon: 'pizza' },
-];
+// Local mock data removed in favor of store data
 
 export default function HomeScreen({ navigation }: any) {
   const [activeCategory, setActiveCategory] = useState('All');
-  const user = useStore((state) => state.user);
-  const currentAddress = useStore((state) => state.currentAddress);
+  const { user, currentAddress, foods, categories, cart, loadFoods, loadCategories } = useStore();
 
-  const filteredFoods = AVAILABLE_FOODS.filter(food => activeCategory === 'All' || food.category === activeCategory);
+  useEffect(() => {
+    loadFoods();
+    loadCategories();
+  }, []);
+
+  const filteredFoods = foods.filter(food => 
+    activeCategory === 'All' || 
+    (typeof food.category === 'string' && food.category === activeCategory) ||
+    (food.category?.name === activeCategory)
+  );
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -51,9 +47,11 @@ export default function HomeScreen({ navigation }: any) {
           </View>
           <TouchableOpacity style={styles.cartButton} onPress={() => navigation.navigate('Cart')}>
             <Ionicons name="bag-handle-outline" size={20} color={Colors.white} />
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>2</Text>
-            </View>
+            {cart.length > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{cart.reduce((sum, item) => sum + item.qty, 0)}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -84,16 +82,16 @@ export default function HomeScreen({ navigation }: any) {
           style={styles.categoriesScroll}
           contentContainerStyle={styles.categoriesContent}
         >
-          {CATEGORIES.map(cat => {
+          {[{ _id: 'all', name: 'All' }, ...categories].map(cat => {
             const isActive = activeCategory === cat.name;
             return (
               <TouchableOpacity 
-                key={cat.id} 
+                key={cat._id} 
                 style={[styles.categoryCard, isActive && styles.categoryCardActive]}
                 onPress={() => setActiveCategory(cat.name)}
               >
                 <View style={[styles.categoryIconCircle, isActive ? styles.categoryIconCircleActive : styles.categoryIconCircleInactive]}>
-                  <Text style={styles.emoji}>{cat.icon}</Text>
+                  <Text style={styles.emoji}>{cat.name === 'All' ? '🔥' : '🍽️'}</Text>
                 </View>
                 <Text style={[styles.categoryName, isActive && styles.categoryNameActive]}>{cat.name}</Text>
               </TouchableOpacity>
@@ -109,12 +107,12 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.foodList}>
           {filteredFoods.map(food => (
             <TouchableOpacity 
-              key={food.id} 
+              key={food._id} 
               style={styles.foodCard} 
-              onPress={() => navigation.navigate('FoodDetails', { foodId: food.id })}
+              onPress={() => navigation.navigate('FoodDetails', { foodId: food._id })}
             >
               <View style={styles.foodImageContainer}>
-                 <Ionicons name={food.icon as any} size={40} color={Colors.white} />
+                 <Image source={{ uri: food.imageUrl }} style={{ width: '100%', height: '100%', borderRadius: 20 }} resizeMode="cover" />
               </View>
               <View style={styles.foodInfo}>
                 <Text style={styles.foodName}>{food.name}</Text>
@@ -122,9 +120,9 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={styles.foodMetaRow}>
                   <View style={styles.ratingBadge}>
                     <Ionicons name="star" size={12} color={Colors.white} style={{ marginRight: 4 }} />
-                    <Text style={styles.ratingText}>{food.rating}</Text>
+                    <Text style={styles.ratingText}>{food.rating || '0.0'}</Text>
                   </View>
-                  <Text style={styles.foodPrice}>${food.price}</Text>
+                  <Text style={styles.foodPrice}>Rs.{food.price}</Text>
                 </View>
               </View>
             </TouchableOpacity>

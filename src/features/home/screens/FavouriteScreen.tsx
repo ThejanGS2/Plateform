@@ -24,7 +24,7 @@ export default function FavouriteScreen({ navigation }: any) {
           </View>
           <View style={styles.cardInfo}>
             <Text style={styles.cardTitle}>Spicy Chicken Burger</Text>
-            <Text style={styles.cardSub}>Burger King • $12.99</Text>
+            <Text style={styles.cardSub}>Burger King • Rs.12.99</Text>
           </View>
           <TouchableOpacity style={styles.actionIcon}>
             <Ionicons name="heart" size={24} color={Colors.primary} />
@@ -38,7 +38,7 @@ export default function FavouriteScreen({ navigation }: any) {
           </View>
           <View style={styles.cardInfo}>
             <Text style={styles.cardTitle}>Pepperoni Pizza</Text>
-            <Text style={styles.cardSub}>Dominos • $15.00</Text>
+            <Text style={styles.cardSub}>Dominos • Rs.15.00</Text>
           </View>
           <TouchableOpacity style={styles.actionIcon}>
             <Ionicons name="heart" size={24} color={Colors.primary} />
