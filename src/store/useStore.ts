@@ -125,8 +125,8 @@ export const useStore = create<AppState>()(
         try {
           // If Admin/Chef, fetch all. If customer, fetch my. 
           // For simplicity in this demo, Admin/Chef screens call this with status
-          const role = get().user?.role;
-          const data = (role === 'ADMIN' || role === 'CHEF' || role === 'DRIVER') 
+          const role = get().user?.role?.toLowerCase();
+          const data = (role === 'admin' || role === 'chef' || role === 'driver') 
             ? await fetchAllOrdersApi(token, status)
             : await fetchMyOrdersApi(token);
           set({ orders: data });
@@ -140,8 +140,8 @@ export const useStore = create<AppState>()(
         try {
           await updateOrderStatusApi(token, id, { status, ...locData });
           // Refresh orders after update
-          const role = get().user?.role;
-          const data = (role === 'ADMIN' || role === 'CHEF' || role === 'DRIVER') 
+          const role = get().user?.role?.toLowerCase();
+          const data = (role === 'admin' || role === 'chef' || role === 'driver') 
             ? await fetchAllOrdersApi(token)
             : await fetchMyOrdersApi(token);
           set({ orders: data });

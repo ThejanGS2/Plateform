@@ -6,8 +6,8 @@ import Food from '../models/Food';
 
 export const getChefStats = async (req: AuthRequest, res: Response) => {
   try {
-    const runningOrders = await Order.countDocuments({ status: { $in: ['accepted', 'preparing'] } });
-    const orderRequests = await Order.countDocuments({ status: 'pending' });
+    const runningOrders = await Order.countDocuments({ status: 'preparing' });
+    const orderRequests = await Order.countDocuments({ status: 'accepted' });
 
     // Popular items aggregation
     const popularItems = await Order.aggregate([

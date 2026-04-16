@@ -34,6 +34,12 @@ export default function ChefHomeScreen({ navigation }: any) {
     useCallback(() => {
       setActiveTab(0);
       loadChefStats();
+      
+      const interval = setInterval(() => {
+        loadChefStats();
+      }, 5000);
+      
+      return () => clearInterval(interval);
     }, [loadChefStats])
   );
 
@@ -48,7 +54,7 @@ export default function ChefHomeScreen({ navigation }: any) {
         <View style={styles.locationRow}>
           <Text style={styles.locationLabel}>LOCATION</Text>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-            <Text style={styles.locationName}>{user?.fullName ?? 'Chef Kitchen'}</Text>
+            <Text style={styles.locationName}>{user?.address || 'Plateform Kitchen'}</Text>
             <Ionicons name="chevron-down" size={14} color={NAVY} />
           </View>
         </View>
@@ -74,13 +80,13 @@ export default function ChefHomeScreen({ navigation }: any) {
         <View style={styles.statsRow}>
           <TouchableOpacity style={styles.statCard} onPress={() => navigation?.navigate?.('ChefOrders')}>
             <View style={styles.statCardHeader}>
-              <Text style={styles.statLabel}>RUNNING ORDERS</Text>
+              <Text style={styles.statLabel}>ACTIVE COOKING</Text>
               <Ionicons name="arrow-forward" size={14} color={ORANGE} />
             </View>
             <Text style={styles.statNumber}>{chefStats?.runningOrders ?? '0'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.statCard} onPress={() => navigation?.navigate?.('ChefOrders')}>
-            <Text style={styles.statLabel}>ORDER REQUEST</Text>
+            <Text style={styles.statLabel}>WAITING REQUESTS</Text>
             <Text style={styles.statNumber}>{chefStats?.orderRequests?.toString().padStart(2, '0') ?? '00'}</Text>
           </TouchableOpacity>
         </View>

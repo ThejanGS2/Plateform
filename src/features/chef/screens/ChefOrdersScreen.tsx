@@ -28,6 +28,13 @@ export default function ChefOrdersScreen({ navigation }: any) {
   useEffect(() => {
     // Load all orders for chef to see counts
     loadOrders();
+    
+    // Poll periodically to catch admin approvals
+    const interval = setInterval(() => {
+      loadOrders();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const runningOrders = orders.filter((o) => o.status === 'preparing');
@@ -35,6 +42,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
 
   const handleStartCooking = (id: string) => {
     updateOrderStatusRemote(id, 'preparing');
+    setActiveTab('running');
   };
 
   const handleFinishCooking = (id: string) => {
