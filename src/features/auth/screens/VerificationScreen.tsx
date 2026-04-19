@@ -118,8 +118,9 @@ export default function VerificationScreen({ navigation, route }: any) {
         title="Verification" 
         subtitle={
           <Text style={{ fontSize: 14, color: Colors.white, opacity: 0.8, marginTop: 8, textAlign: 'center', lineHeight: 22 }}>
-            We have sent a code to your email{'\n'}
+            We have sent a 6-digit code to{'\n'}
             <Text style={{ fontWeight: 'bold', color: Colors.white }}>{email}</Text>
+            {'\n'}and your registered phone number
           </Text>
         }
         onBack={() => navigation.goBack()} 

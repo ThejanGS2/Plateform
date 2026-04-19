@@ -4,13 +4,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 
-import { useStore } from '@/store/useStore';
+import { useStore, getDeliveryMeta } from '@/store/useStore';
 
 export default function PaymentBreakdownScreen({ navigation }: any) {
-  const { cart } = useStore();
+  const { cart, currentAddress } = useStore();
   
   const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
-  const deliveryFee = cart.length > 0 ? 10 : 0;
+  const deliveryMeta = getDeliveryMeta(currentAddress);
+  const deliveryFee = cart.length > 0 ? deliveryMeta.fee : 0;
   const total = subtotal + deliveryFee;
 
   return (

@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useStore } from '@/store/useStore';
+import { useStore, getDeliveryMeta } from '@/store/useStore';
 
 const GREEN  = '#2DB87E';
 const ORANGE = '#FF7A28';
@@ -23,20 +23,27 @@ export default function DriverHomeScreen({ navigation }: any) {
   }, []);
 
   const deliveredOrders = orders.filter(o => o.status === 'delivered');
-  const preparingOrders = orders.filter(o => o.status === 'preparing');
+  const preparingOrders = orders.filter(o => o.status === 'ready_for_pickup');
   const incoming = preparingOrders.length > 0 ? preparingOrders[0] : null;
 
   // Calculate dynamic stats
-  const todayEarnings = deliveredOrders.reduce((acc, o) => acc + (o.totalAmount * 0.25), 0); // Assuming 25% delivery fee
+  const todayEarnings = deliveredOrders.reduce((acc, o) => {
+    const meta = getDeliveryMeta(o.deliveryAddress);
+    return acc + meta.fee;
+  }, 0);
   const tripsCount = deliveredOrders.length;
-  const totalDistance = (tripsCount * 3.7).toFixed(1); // Estimated distance: 3.7km per trip
+  const totalDistanceNum = deliveredOrders.reduce((acc, o) => acc + getDeliveryMeta(o.deliveryAddress).distNum, 0);
+  const totalDistance = totalDistanceNum.toFixed(1);
 
   const handleAccept = async () => {
     if (incoming) {
       await updateOrderStatusRemote(incoming._id, 'out_for_delivery');
-      navigation.navigate('DriverOrders');
+      navigation.navigate('DriverDelivery', { orderId: incoming._id });
     }
   };
+
+  const orderMeta = incoming ? getDeliveryMeta(incoming.deliveryAddress) : null;
+
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -106,37 +113,51 @@ export default function DriverHomeScreen({ navigation }: any) {
           incoming ? (
             <View style={styles.deliveryCard}>
               <View style={styles.deliveryHeader}>
-                <Ionicons name="flash" size={18} color={ORANGE} />
-                <Text style={styles.deliveryNew}>New Request: {incoming.items?.[0]?.food?.name || 'Order'}</Text>
+                <View style={styles.newBadge}>
+                  <Ionicons name="flash" size={14} color={WHITE} />
+                  <Text style={styles.newText}>READY</Text>
+                </View>
+                <Text style={styles.deliveryNew}>{incoming.items?.[0]?.food?.name || 'Order Request'}</Text>
               </View>
 
               {[
-                { icon: 'storefront-outline',  label: 'Pickup',   value: incoming.pickupLocation || 'Plateform Kitchen, Main St' },
-                { icon: 'location-outline',    label: 'Drop Off', value: incoming.dropoffLocation || 'Customer Location'   },
+                { 
+                  icon: 'storefront-outline',  
+                  label: 'PICKUP FROM',   
+                  value: incoming.pickupLocation || 'Sulthan Palace, Dr. C.W.W. Kannangara Mawatha' 
+                },
+                { 
+                  icon: 'location-outline',    
+                  label: 'DROP OFF TO', 
+                  value: `${incoming.user?.fullName ? incoming.user.fullName + ' · ' : ''}${incoming.deliveryAddress || 'Customer Location'}` 
+                },
               ].map((r, i) => (
                 <View key={i} style={styles.routeRow}>
                   <View style={[styles.routeIcon, { backgroundColor: i === 0 ? ORANGE + '15' : GREEN + '15' }]}>
                     <Ionicons name={r.icon as any} size={18} color={i === 0 ? ORANGE : GREEN} />
                   </View>
-                  <View>
+                  <View style={{ flex: 1 }}>
                     <Text style={styles.routeLabel}>{r.label}</Text>
-                    <Text style={styles.routeValue}>{r.value}</Text>
+                    <Text style={styles.routeValue} numberOfLines={1}>{r.value}</Text>
                   </View>
                 </View>
               ))}
 
               <View style={styles.deliveryMeta}>
-                <View style={styles.metaChip}>
-                  <Ionicons name="cash-outline" size={16} color={GREEN} />
-                  <Text style={[styles.metaValue, { color: GREEN }]}>Rs.{(incoming?.totalAmount / 4).toFixed(2) || '12.50'} (Est)</Text>
+                <View style={[styles.metaChip, { backgroundColor: GREEN + '08' }]}>
+                  <Text style={[styles.metaTag, { color: GREEN }]}>EARNING</Text>
+                  <Text style={[styles.metaValue, { color: GREEN }]}>Rs.{orderMeta?.fee || '0'}</Text>
+                  <Text style={[styles.metaSub, { color: GREEN }]}>Estimated</Text>
                 </View>
-                <View style={styles.metaChip}>
-                  <Ionicons name="navigate-outline" size={16} color="#4C8EFF" />
-                  <Text style={[styles.metaValue, { color: '#4C8EFF' }]}>{incoming.distance || '2.4 km'}</Text>
+                <View style={[styles.metaChip, { backgroundColor: '#4C8EFF08' }]}>
+                  <Text style={[styles.metaTag, { color: '#4C8EFF' }]}>DISTANCE</Text>
+                  <Text style={[styles.metaValue, { color: '#4C8EFF' }]}>{orderMeta?.dist || '2.4 km'}</Text>
+                  <Text style={[styles.metaSub, { color: '#4C8EFF' }]}>Route</Text>
                 </View>
-                <View style={styles.metaChip}>
-                  <Ionicons name="time-outline" size={16} color={ORANGE} />
-                  <Text style={[styles.metaValue, { color: ORANGE }]}>{incoming.time || '~8 min'}</Text>
+                <View style={[styles.metaChip, { backgroundColor: ORANGE + '08' }]}>
+                  <Text style={[styles.metaTag, { color: ORANGE }]}>TIME</Text>
+                  <Text style={[styles.metaValue, { color: ORANGE }]}>{orderMeta?.time || '~8 min'}</Text>
+                  <Text style={[styles.metaSub, { color: ORANGE }]}>Est. Arrival</Text>
                 </View>
               </View>
 
@@ -153,9 +174,82 @@ export default function DriverHomeScreen({ navigation }: any) {
               </View>
             </View>
           ) : (
-            <View style={styles.offlineBox}>
-              <Ionicons name="restaurant-outline" size={48} color={GREY} />
-              <Text style={styles.offlineText}>Waiting for restaurants to prepare orders...</Text>
+            <View>
+              {/* Waiting pulse indicator */}
+              <View style={styles.waitingCard}>
+                <View style={styles.waitingLeft}>
+                  <View style={styles.pulseOuter}>
+                    <View style={styles.pulseInner} />
+                  </View>
+                  <View>
+                    <Text style={styles.waitingTitle}>Waiting for orders</Text>
+                    <Text style={styles.waitingSubtitle}>You'll be notified instantly</Text>
+                  </View>
+                </View>
+                <Ionicons name="notifications-outline" size={22} color={ORANGE} />
+              </View>
+
+              {/* Income Summary Section */}
+              {deliveredOrders.length > 0 && (
+                <>
+                  <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Income Summary</Text>
+
+                  {/* Summary Stats */}
+                  <View style={styles.incomeSummaryRow}>
+                    <View style={[styles.incomeStatBox, { backgroundColor: GREEN + '12' }]}>
+                      <Ionicons name="cash-outline" size={20} color={GREEN} />
+                      <Text style={[styles.incomeStatValue, { color: GREEN }]}>
+                        Rs.{todayEarnings.toFixed(0)}
+                      </Text>
+                      <Text style={styles.incomeStatLabel}>Total Earned</Text>
+                    </View>
+                    <View style={[styles.incomeStatBox, { backgroundColor: '#4C8EFF12' }]}>
+                      <Ionicons name="bicycle-outline" size={20} color="#4C8EFF" />
+                      <Text style={[styles.incomeStatValue, { color: '#4C8EFF' }]}>
+                        {tripsCount}
+                      </Text>
+                      <Text style={styles.incomeStatLabel}>Deliveries</Text>
+                    </View>
+                    <View style={[styles.incomeStatBox, { backgroundColor: ORANGE + '12' }]}>
+                      <Ionicons name="navigate-outline" size={20} color={ORANGE} />
+                      <Text style={[styles.incomeStatValue, { color: ORANGE }]}>
+                        {totalDistance} km
+                      </Text>
+                      <Text style={styles.incomeStatLabel}>Total Distance</Text>
+                    </View>
+                  </View>
+
+                  {/* Recent Deliveries */}
+                  <Text style={[styles.sectionTitle, { marginTop: 20, fontSize: 14 }]}>Recent Deliveries</Text>
+                  {deliveredOrders.slice(0, 4).map((o, i) => {
+                    const meta = getDeliveryMeta(o.deliveryAddress);
+                    const customer = (o.user as any);
+                    const earned = meta.fee.toFixed(2);
+                    return (
+                      <View key={o._id} style={styles.recentCard}>
+                        <View style={styles.recentLeft}>
+                          <View style={[styles.recentIcon, { backgroundColor: i % 2 === 0 ? GREEN + '15' : ORANGE + '15' }]}>
+                            <Ionicons name="checkmark-circle" size={20} color={i % 2 === 0 ? GREEN : ORANGE} />
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <Text style={styles.recentName} numberOfLines={1}>
+                              {o.items?.[0]?.food?.name || 'Order'}
+                              {o.items?.length > 1 ? ` +${o.items.length - 1}` : ''}
+                            </Text>
+                            <Text style={styles.recentAddr} numberOfLines={1}>
+                              {customer?.fullName ? customer.fullName + ' · ' : ''}{o.deliveryAddress || 'Delivered'}
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.recentRight}>
+                          <Text style={styles.recentEarned}>+Rs.{earned}</Text>
+                          <Text style={styles.recentDist}>{meta.dist}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+                </>
+              )}
             </View>
           )
         ) : (
@@ -220,29 +314,58 @@ const styles = StyleSheet.create({
   
   sectionTitle:    { fontSize: 16, fontWeight: '800', color: NAVY, marginBottom: 14 },
   
-  deliveryCard:    { backgroundColor: WHITE, borderRadius: 20, padding: 20 },
-  deliveryHeader:  { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 16 },
-  deliveryNew:     { color: ORANGE, fontWeight: '800', fontSize: 15 },
+  deliveryCard:    { backgroundColor: WHITE, borderRadius: 24, padding: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 15, elevation: 4 },
+  deliveryHeader:  { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
+  newBadge:        { backgroundColor: ORANGE, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
+  newText:         { color: WHITE, fontWeight: '900', fontSize: 10 },
+  deliveryNew:     { color: NAVY, fontWeight: '800', fontSize: 16, flex: 1 },
   
-  routeRow:        { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
-  routeIcon:       { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  routeLabel:      { fontSize: 11, color: GREY, fontWeight: '600', marginBottom: 2 },
+  routeRow:        { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 18 },
+  routeIcon:       { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  routeLabel:      { fontSize: 10, color: GREY, fontWeight: '800', marginBottom: 2, letterSpacing: 0.2 },
   routeValue:      { fontSize: 14, fontWeight: '700', color: NAVY },
   
-  deliveryMeta:    { flexDirection: 'row', gap: 10, marginVertical: 16, borderTopWidth: 1, borderTopColor: '#F0F0F0', paddingTop: 16 },
-  metaChip:        { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, backgroundColor: LIGHT_BG, borderRadius: 12, paddingVertical: 10 },
-  metaValue:       { fontWeight: '800', fontSize: 13 },
+  deliveryMeta:    { flexDirection: 'row', gap: 10, marginVertical: 20, borderTopWidth: 1, borderTopColor: '#F5F5F5', paddingTop: 20 },
+  metaChip:        { flex: 1, alignItems: 'center', borderRadius: 16, paddingVertical: 12, paddingHorizontal: 4 },
+  metaTag:         { fontSize: 9, fontWeight: '900', marginBottom: 4, letterSpacing: 0.5 },
+  metaValue:       { fontWeight: '800', fontSize: 15, marginBottom: 2 },
+  metaSub:         { fontSize: 9, fontWeight: '600', opacity: 0.8 },
   
-  deliveryBtns:    { flexDirection: 'row', gap: 12 },
-  declineBtn:      { flex: 1, borderWidth: 1.5, borderColor: '#EBEBEB', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  deliveryBtns:    { flexDirection: 'row', gap: 12, marginTop: 4 },
+  declineBtn:      { flex: 1, borderWidth: 1.5, borderColor: '#F0F0F0', borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
   declineBtnText:  { fontWeight: '700', color: GREY },
-  acceptBtn:       { flex: 2, backgroundColor: ORANGE, borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
-  acceptBtnText:   { color: WHITE, fontWeight: '800', fontSize: 15 },
+  acceptBtn:       { flex: 2, backgroundColor: ORANGE, borderRadius: 16, paddingVertical: 16, alignItems: 'center', shadowColor: ORANGE, shadowOpacity: 0.3, shadowRadius: 10, elevation: 5 },
+  acceptBtnText:   { color: WHITE, fontWeight: '800', fontSize: 16 },
   
   offlineBox:      { backgroundColor: WHITE, borderRadius: 20, padding: 40, alignItems: 'center' },
   offlineText:     { color: GREY, textAlign: 'center', marginTop: 12, marginBottom: 24, fontWeight: '500', lineHeight: 20 },
   goOnlineBtn:     { backgroundColor: GREEN, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 14 },
   goOnlineText:    { color: WHITE, fontWeight: '800', fontSize: 15 },
+
+  // Waiting card
+  waitingCard:     { backgroundColor: WHITE, borderRadius: 18, padding: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, elevation: 2 },
+  waitingLeft:     { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  pulseOuter:      { width: 38, height: 38, borderRadius: 19, backgroundColor: ORANGE + '20', justifyContent: 'center', alignItems: 'center' },
+  pulseInner:      { width: 18, height: 18, borderRadius: 9, backgroundColor: ORANGE },
+  waitingTitle:    { fontSize: 14, fontWeight: '800', color: NAVY },
+  waitingSubtitle: { fontSize: 11, color: GREY, marginTop: 2 },
+
+  // Income summary
+  incomeSummaryRow: { flexDirection: 'row', gap: 10 },
+  incomeStatBox:    { flex: 1, alignItems: 'center', borderRadius: 18, paddingVertical: 16, gap: 4 },
+  incomeStatValue:  { fontSize: 18, fontWeight: '900' },
+  incomeStatLabel:  { fontSize: 10, fontWeight: '700', color: GREY, letterSpacing: 0.3 },
+
+  // Recent deliveries
+  recentCard:    { backgroundColor: WHITE, borderRadius: 16, padding: 14, marginBottom: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', shadowColor: '#000', shadowOpacity: 0.03, shadowRadius: 6, elevation: 1 },
+  recentLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
+  recentIcon:    { width: 38, height: 38, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  recentName:    { fontSize: 13, fontWeight: '700', color: NAVY },
+  recentAddr:    { fontSize: 11, color: GREY, marginTop: 2 },
+  recentRight:   { alignItems: 'flex-end', gap: 2 },
+  recentEarned:  { fontSize: 14, fontWeight: '800', color: GREEN },
+  recentDist:    { fontSize: 11, color: GREY },
+
 
   navbar: {
     position: 'absolute',

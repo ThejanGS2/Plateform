@@ -47,6 +47,7 @@ import DriverHomeScreen from '@/features/driver/screens/DriverHomeScreen';
 import DriverOrdersScreen from '@/features/driver/screens/DriverOrdersScreen';
 import DriverWalletScreen from '@/features/driver/screens/DriverWalletScreen';
 import DriverProfileScreen from '@/features/driver/screens/DriverProfileScreen';
+import DriverDeliveryScreen from '@/features/driver/screens/DriverDeliveryScreen';
 
 // Sub-screens
 import PersonalInfoScreen from '@/features/profile/screens/PersonalInfoScreen';
@@ -113,10 +114,11 @@ export const AppNavigator = () => {
       <Stack.Screen name="ChefProfile"       component={ChefProfileScreen} />
 
       {/* ── Driver ── */}
-      <Stack.Screen name="DriverHome"    component={DriverHomeScreen} />
-      <Stack.Screen name="DriverOrders"  component={DriverOrdersScreen} />
-      <Stack.Screen name="DriverWallet"  component={DriverWalletScreen} />
-      <Stack.Screen name="DriverProfile" component={DriverProfileScreen} />
+      <Stack.Screen name="DriverHome"     component={DriverHomeScreen} />
+      <Stack.Screen name="DriverOrders"   component={DriverOrdersScreen} />
+      <Stack.Screen name="DriverWallet"   component={DriverWalletScreen} />
+      <Stack.Screen name="DriverProfile"  component={DriverProfileScreen} />
+      <Stack.Screen name="DriverDelivery" component={DriverDeliveryScreen} />
 
       {/* ── Customer / shared ── */}
       <Stack.Screen name="Home"             component={HomeScreen} />

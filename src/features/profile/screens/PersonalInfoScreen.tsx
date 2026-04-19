@@ -13,6 +13,7 @@ const API_URL = 'http://172.20.10.2:5001/api';
 export default function PersonalInfoScreen({ navigation }: any) {
   const user = useStore((state) => state.user);
   const setUser = useStore((state) => state.setUser);
+  const token = useStore((state) => state.token);
 
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [phone, setPhone] = useState(user?.phone || '');
@@ -49,9 +50,11 @@ export default function PersonalInfoScreen({ navigation }: any) {
     try {
       const response = await fetch(`${API_URL}/auth/update-profile`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          email: user.email,
           fullName,
           phone,
           bio,

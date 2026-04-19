@@ -10,12 +10,13 @@ const API_URL = 'http://172.20.10.2:5001/api'; // Changed to 5001 to avoid AirPl
 export default function SignUpScreen({ navigation }: any) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [retypePassword, setRetypePassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSignUp = async () => {
-    if (!name || !email || !password) {
+    if (!name || !email || !phone || !password) {
       Alert.alert('Error', 'Please fill all fields');
       return;
     }
@@ -24,12 +25,19 @@ export default function SignUpScreen({ navigation }: any) {
       return;
     }
 
+    // Basic phone validation
+    const cleanPhone = phone.trim().replace(/\s/g, '');
+    if (cleanPhone.length < 10) {
+      Alert.alert('Error', 'Please enter a valid phone number');
+      return;
+    }
+
     setIsLoading(true);
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fullName: name, email, password }),
+        body: JSON.stringify({ fullName: name, email, phone: cleanPhone, password }),
       });
 
       const data = await response.json();
@@ -67,6 +75,13 @@ export default function SignUpScreen({ navigation }: any) {
           value={email} 
           onChangeText={setEmail} 
           keyboardType="email-address"
+        />
+        <AppInput 
+          label="PHONE NUMBER" 
+          placeholder="+94 77 123 4567" 
+          value={phone} 
+          onChangeText={setPhone} 
+          keyboardType="phone-pad"
         />
         <AppInput 
           label="PASSWORD" 
@@ -130,3 +145,4 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+

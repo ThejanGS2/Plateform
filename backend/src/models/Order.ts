@@ -25,7 +25,7 @@ const OrderSchema: Schema = new Schema({
     price: { type: Number, required: true }
   }],
   totalAmount: { type: Number, required: true },
-  status: { type: String, enum: ['pending', 'accepted', 'preparing', 'out_for_delivery', 'delivered', 'cancelled'], default: 'pending' },
+  status: { type: String, enum: ['pending', 'accepted', 'preparing', 'ready_for_pickup', 'out_for_delivery', 'delivered', 'cancelled'], default: 'pending' },
   deliveryAddress: { type: String, required: true },
   pickupLocation: { type: String },
   dropoffLocation: { type: String },

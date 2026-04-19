@@ -46,7 +46,7 @@ export default function ChefOrdersScreen({ navigation }: any) {
   };
 
   const handleFinishCooking = (id: string) => {
-    updateOrderStatusRemote(id, 'out_for_delivery');
+    updateOrderStatusRemote(id, 'ready_for_pickup');
   };
 
   const markPreparing = (id: string) => {
@@ -78,19 +78,21 @@ export default function ChefOrdersScreen({ navigation }: any) {
           <Text style={styles.orderId}>ID: {item._id.slice(-6).toUpperCase()}</Text>
           <View style={styles.priceRow}>
             <Text style={styles.price}>Rs.{price}</Text>
+          </View>
+          <View style={styles.actionRow}>
             {activeTab === 'requests' ? (
-               <TouchableOpacity style={styles.doneBtn} onPress={() => handleStartCooking(item._id)}>
+               <TouchableOpacity style={[styles.doneBtn, { flex: 1 }]} onPress={() => handleStartCooking(item._id)}>
                  <Text style={styles.doneBtnText}>Start Cooking</Text>
                </TouchableOpacity>
             ) : (
-              <View style={{ flexDirection: 'row', gap: 6 }}>
-                <TouchableOpacity style={styles.doneBtn} onPress={() => handleFinishCooking(item._id)}>
-                  <Text style={styles.doneBtnText}>Ready to Deliver</Text>
+              <>
+                <TouchableOpacity style={[styles.doneBtn, { flex: 1 }]} onPress={() => handleFinishCooking(item._id)}>
+                  <Text style={styles.doneBtnText}>✅ Ready for Pickup</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.cancelBtn} onPress={() => markCancelled(item._id)}>
                   <Text style={styles.cancelBtnText}>Cancel</Text>
                 </TouchableOpacity>
-              </View>
+              </>
             )}
           </View>
         </View>
@@ -234,11 +236,12 @@ const styles = StyleSheet.create({
   categoryTag: { fontSize: 11, fontWeight: '700', color: ORANGE },
   foodName: { fontSize: 14, fontWeight: '700', color: NAVY, marginTop: 2 },
   orderId: { fontSize: 12, color: GREY, marginTop: 1 },
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
-  price: { fontSize: 15, fontWeight: '800', color: NAVY, marginRight: 4 },
-  doneBtn: { backgroundColor: ORANGE, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6 },
+  priceRow: { flexDirection: 'row', alignItems: 'center', marginTop: 4 },
+  price: { fontSize: 15, fontWeight: '800', color: NAVY },
+  actionRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 },
+  doneBtn: { backgroundColor: ORANGE, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, alignItems: 'center' },
   doneBtnText: { color: WHITE, fontSize: 12, fontWeight: '700' },
-  cancelBtn: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, borderWidth: 1.5, borderColor: '#E0E0E0' },
+  cancelBtn: { borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, borderWidth: 1.5, borderColor: '#E0E0E0', alignItems: 'center' },
   cancelBtnText: { color: NAVY, fontSize: 12, fontWeight: '600' },
 
   emptyBox: { alignItems: 'center', paddingTop: 60, gap: 12 },

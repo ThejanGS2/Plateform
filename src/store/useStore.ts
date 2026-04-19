@@ -15,7 +15,7 @@ import {
 import { fetchMyNotificationsApi } from '@/api/notificationApi';
 import { fetchUsersApi } from '@/api/userApi';
 
-export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'out_for_delivery' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready_for_pickup' | 'out_for_delivery' | 'delivered' | 'cancelled';
 
 export interface Order {
   _id: string;
@@ -97,6 +97,19 @@ interface AppState {
   chefStats: any | null;
   loadChefStats: () => Promise<void>;
 }
+export const getDeliveryMeta = (address: string) => {
+  const safeAddress = address || 'Default String For Hash';
+  const hash = safeAddress.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const distNum = (2.5 + (hash % 60) / 10);
+  const time = Math.floor(8 + (hash % 30));
+  const fee = Math.floor(distNum * 50); // Rs 50 per km
+  return {
+    distNum,
+    dist: `${distNum.toFixed(1)} km`,
+    time: `~${time} min`,
+    fee
+  };
+};
 
 export const useStore = create<AppState>()(
   persist(
@@ -218,7 +231,8 @@ export const useStore = create<AppState>()(
         if (!token || cart.length === 0) return null;
 
         const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
-        const deliveryFee = 10;
+        const deliveryMeta = getDeliveryMeta(currentAddress);
+        const deliveryFee = cart.length > 0 ? deliveryMeta.fee : 0;
         const totalAmount = subtotal + deliveryFee;
 
         const orderData = {

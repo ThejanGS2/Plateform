@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
 import { sendEmail } from '../utils/mailer';
+import { sendSMS } from '../utils/sms';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
@@ -21,7 +22,7 @@ export const register = async (req: Request, res: Response) => {
       if (userExists.isVerified) {
         return res.status(400).json({ message: 'User already exists and is verified. Please log in.' });
       } else {
-        // User exists but not verified, generate new code and resend
+              // User exists but not verified, generate new code and resend
         const newCode = generateVerificationCode();
         userExists.verificationCode = newCode;
         await userExists.save();
@@ -31,6 +32,13 @@ export const register = async (req: Request, res: Response) => {
           'Verify your Plateform account (New Code)',
           `Your new verification code is: ${newCode}`
         );
+
+        if (userExists.phone) {
+          await sendSMS(
+            userExists.phone,
+            `Your Plateform verification code is: ${newCode}`
+          );
+        }
 
         return res.status(200).json({
           message: 'Account already exists but not verified. A new code has been sent.',
@@ -52,15 +60,23 @@ export const register = async (req: Request, res: Response) => {
       verificationCode
     });
 
-    // Send email (in production, use a queue)
+        // Send email
     await sendEmail(
       email,
       'Verify your Plateform account',
-      `Your verification code is: ${verificationCode}`
+      `Your Plateform verification code is: ${verificationCode}\n\nEnter this code in the app to activate your account.`
     );
 
+    // Send SMS if phone provided
+    if (phone) {
+      await sendSMS(
+        phone,
+        `Your Plateform verification code is: ${verificationCode}`
+      );
+    }
+
     res.status(201).json({
-      message: 'Registration successful. Please verify your email.',
+      message: 'Registration successful. Please verify your account.',
       email: newUser.email
     });
   } catch (error) {
@@ -121,11 +137,19 @@ export const resendCode = async (req: Request, res: Response) => {
     user.verificationCode = verificationCode;
     await user.save();
 
-    await sendEmail(
+        await sendEmail(
       email,
       'Your new verification code',
-      `Your new verification code is: ${verificationCode}`
+      `Your new Plateform verification code is: ${verificationCode}`
     );
+
+    // Also resend via SMS if user has a phone
+    if (user.phone) {
+      await sendSMS(
+        user.phone,
+        `Your new Plateform verification code is: ${verificationCode}`
+      );
+    }
 
     res.json({ message: 'Verification code resent successfully' });
   } catch (error) {

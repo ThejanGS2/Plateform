@@ -133,7 +133,7 @@ export const getAllOrders = async (req: AuthRequest, res: Response) => {
     const filter = status ? { status } : {};
     const orders = await Order.find(filter)
       .populate('items.food')
-      .populate('user', 'fullName email')
+      .populate('user', 'fullName email phone')
       .sort({ createdAt: -1 });
     res.json(orders);
   } catch (error) {
