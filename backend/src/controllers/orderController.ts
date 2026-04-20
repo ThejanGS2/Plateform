@@ -57,7 +57,7 @@ export const getChefStats = async (req: AuthRequest, res: Response) => {
 };
 
 export const placeOrder = async (req: AuthRequest, res: Response) => {
-  const { totalAmount, deliveryAddress, items } = req.body;
+  const { totalAmount, deliveryAddress, items, deliveryDistance, deliveryTime, deliveryFee } = req.body;
   const userId = req.user?.id;
 
   if (!userId) {
@@ -69,6 +69,9 @@ export const placeOrder = async (req: AuthRequest, res: Response) => {
       user: userId,
       totalAmount,
       deliveryAddress,
+      deliveryDistance: deliveryDistance || 0,
+      deliveryTime: deliveryTime || 0,
+      deliveryFee: deliveryFee || 0,
       items, // Expecting array of { food, quantity, size, price }
       status: 'pending'
     });

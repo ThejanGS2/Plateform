@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
-import { useStore, getDeliveryMeta } from '@/store/useStore';
+import { useStore } from '@/store/useStore';
 import { removePaymentMethodApi } from '@/api/paymentApi';
 
 const CashLogo = () => (
@@ -33,12 +33,11 @@ const MastercardLogo = () => (
 
 
 export default function PaymentMethodScreen({ navigation, route }: any) {
-  const { token, cart, paymentMethods, loadPaymentMethods, setPaymentMethods, placeNewOrder, currentAddress } = useStore();
+  const { token, cart, paymentMethods, loadPaymentMethods, setPaymentMethods, placeNewOrder, currentAddress, deliveryMeta, isCalculatingDelivery } = useStore();
   const [loading, setLoading] = useState(false);
   
   const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
-  const deliveryMeta = getDeliveryMeta(currentAddress);
-  const deliveryFee = cart.length > 0 ? deliveryMeta.fee : 0;
+  const deliveryFee = cart.length > 0 ? (deliveryMeta?.fee ?? 0) : 0;
   const total = subtotal + deliveryFee;
   const isManageMode = route.params?.mode === 'manage';
   const [selectedMethodId, setSelectedMethodId] = useState(isManageMode ? (paymentMethods[0]?._id || '') : 'cash');

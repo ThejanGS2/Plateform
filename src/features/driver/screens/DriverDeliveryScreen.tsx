@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useStore } from '@/store/useStore';
+import { useStore, getDeliveryMeta } from '@/store/useStore';
 
 const GREEN   = '#2DB87E';
 const ORANGE  = '#FF7A28';
@@ -44,7 +44,9 @@ export default function DriverDeliveryScreen({ navigation, route }: any) {
 
   const openGoogleMaps = () => {
     const encodedAddress = encodeURIComponent(deliveryAddr);
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}&travelmode=driving`;
+    // Explicitly navigate FROM Sulthan Palace (Plateform Location)
+    const encodedOrigin = encodeURIComponent("6.914604,79.8650047");
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${encodedOrigin}&destination=${encodedAddress}&travelmode=driving`;
     Linking.openURL(url).catch(() =>
       Alert.alert('Error', 'Could not open Google Maps.')
     );
@@ -105,14 +107,34 @@ export default function DriverDeliveryScreen({ navigation, route }: any) {
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
 
         {/* Navigate Button */}
+        {/* Navigate Button */}
         <TouchableOpacity style={styles.mapBtn} onPress={openGoogleMaps} activeOpacity={0.85}>
           <View style={styles.mapBtnLeft}>
             <View style={styles.mapIconBox}>
               <Ionicons name="navigate" size={24} color={WHITE} />
             </View>
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.mapBtnTitle}>Open Navigation</Text>
               <Text style={styles.mapBtnSub} numberOfLines={1}>{deliveryAddr}</Text>
+              
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 12 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="map-outline" size={14} color={ORANGE} />
+                  <Text style={{ color: WHITE, fontSize: 12, fontWeight: '600' }}>Sulthan Palace to Customer</Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="bicycle-outline" size={14} color={GREEN} />
+                  <Text style={{ color: WHITE, fontSize: 12, fontWeight: '800' }}>
+                    {order.deliveryDistance ? `${order.deliveryDistance.toFixed(1)} km` : getDeliveryMeta(deliveryAddr).dist}
+                  </Text>
+                </View>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Ionicons name="time-outline" size={14} color={'#4C8EFF'} />
+                  <Text style={{ color: WHITE, fontSize: 12, fontWeight: '800' }}>
+                    {order.deliveryTime ? `~${order.deliveryTime} min` : getDeliveryMeta(deliveryAddr).time}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
           <Ionicons name="chevron-forward" size={20} color={WHITE} />
@@ -215,7 +237,7 @@ export default function DriverDeliveryScreen({ navigation, route }: any) {
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Your Earning (Est.)</Text>
             <Text style={[styles.totalValue, { color: GREEN }]}>
-              Rs.{(order.totalAmount * 0.25).toFixed(2)}
+              Rs.{(order.deliveryFee || getDeliveryMeta(deliveryAddr).fee).toFixed(2)}
             </Text>
           </View>
         </View>

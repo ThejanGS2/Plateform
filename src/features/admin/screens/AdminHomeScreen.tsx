@@ -39,26 +39,69 @@ const TABS = [
   { icon: 'notifications-outline', label: 'Alerts', screen: 'AdminNotifications' },
 ];
 
+function timeAgo(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHrs = Math.floor(diffMins / 60);
+  if (diffHrs < 24) return `${diffHrs}h ago`;
+  return `${Math.floor(diffHrs / 24)}d ago`;
+}
+
 export default function AdminHomeScreen({ navigation }: any) {
-  const { user, orders, loadOrders } = useStore();
+  const { user, orders, loadOrders, users, loadUsers } = useStore();
   const [activeTab, setActiveTab] = useState(0);
 
   useEffect(() => {
     loadOrders();
+    loadUsers();
   }, []);
 
   useFocusEffect(
     useCallback(() => {
       setActiveTab(0);
-      loadOrders(); // Refresh on focus
+      loadOrders();
+      loadUsers();
     }, [])
   );
 
   const totalOrders = orders.length;
   const pendingCount = orders.filter(o => o.status === 'pending').length;
-  const revenueToday = orders
-    .filter(o => o.status === 'delivered') // Improved: should filter by date too if backend supports
-    .reduce((acc, o) => acc + o.totalAmount, 0);
+  const userCount = users.length;
+  const revenueToday = Math.round(
+    orders
+      .filter(o => o.status === 'delivered')
+      .reduce((acc, o) => acc + o.totalAmount, 0)
+  );
+
+  // Build dynamic activity feed from real order events
+  const recentActivity = [...orders]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 8)
+    .map(o => {
+      const customerName = (o.user as any)?.fullName || 'Customer';
+      const itemName = o.items?.[0]?.food?.name || 'item';
+      switch (o.status) {
+        case 'delivered':
+          return { icon: 'bag-check', text: `${customerName}'s order delivered`, time: timeAgo(o.createdAt), color: '#2DB87E' };
+        case 'out_for_delivery':
+          return { icon: 'bicycle', text: `Delivery in progress → ${customerName}`, time: timeAgo(o.createdAt), color: '#A855F7' };
+        case 'ready_for_pickup':
+          return { icon: 'bag-handle', text: `${itemName} ready for pickup`, time: timeAgo(o.createdAt), color: '#4C8EFF' };
+        case 'preparing':
+          return { icon: 'flame', text: `Preparing ${itemName} for ${customerName}`, time: timeAgo(o.createdAt), color: ORANGE };
+        case 'accepted':
+          return { icon: 'checkmark-circle', text: `Order accepted for ${customerName}`, time: timeAgo(o.createdAt), color: '#2DB87E' };
+        case 'cancelled':
+          return { icon: 'close-circle', text: `Order cancelled by ${customerName}`, time: timeAgo(o.createdAt), color: '#FF4B4B' };
+        case 'pending':
+        default:
+          return { icon: 'time', text: `New order from ${customerName}`, time: timeAgo(o.createdAt), color: '#4C8EFF' };
+      }
+    });
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -116,11 +159,17 @@ export default function AdminHomeScreen({ navigation }: any) {
               <Text style={styles.statLabel}>TOTAL USERS</Text>
               <Ionicons name="arrow-forward" size={14} color="#4C8EFF" />
             </View>
-            <Text style={[styles.statNumber, { color: '#4C8EFF' }]}>0</Text>
+            <Text style={[styles.statNumber, { color: '#4C8EFF' }]}>{userCount}</Text>
           </TouchableOpacity>
           <View style={[styles.statCard, { borderLeftWidth: 3, borderLeftColor: '#2DB87E' }]}>
             <Text style={styles.statLabel}>TOTAL REVENUE</Text>
-            <Text style={[styles.statNumber, { color: '#2DB87E' }]}>Rs.{revenueToday.toLocaleString()}</Text>
+            <Text
+              style={[styles.statNumber, { color: '#2DB87E', fontSize: 26 }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              Rs.{revenueToday.toLocaleString()}
+            </Text>
           </View>
         </View>
 
@@ -188,21 +237,23 @@ export default function AdminHomeScreen({ navigation }: any) {
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
+            <TouchableOpacity onPress={() => navigation?.navigate?.('AdminOrders')}>
+              <Text style={styles.seeAll}>See All</Text>
+            </TouchableOpacity>
           </View>
-          {[
-            { icon: 'person-add', text: 'New user registered', time: '2m ago', color: '#4C8EFF' },
-            { icon: 'bag-check', text: 'Order #1042 completed', time: '5m ago', color: '#2DB87E' },
-            { icon: 'warning', text: 'Low stock: Chicken Burger', time: '18m ago', color: ORANGE },
-            { icon: 'bicycle', text: 'Driver #7 went offline', time: '30m ago', color: '#A855F7' },
-          ].map((item, i) => (
-            <View key={i} style={styles.activityRow}>
-              <View style={[styles.activityIcon, { backgroundColor: item.color + '20' }]}>
-                <Ionicons name={item.icon as any} size={16} color={item.color} />
+          {recentActivity.length === 0 ? (
+            <Text style={{ color: GREY_TEXT, fontSize: 13, textAlign: 'center', paddingVertical: 16 }}>No activity yet</Text>
+          ) : (
+            recentActivity.map((item, i) => (
+              <View key={i} style={[styles.activityRow, i === recentActivity.length - 1 && { borderBottomWidth: 0 }]}>
+                <View style={[styles.activityIcon, { backgroundColor: item.color + '20' }]}>
+                  <Ionicons name={item.icon as any} size={16} color={item.color} />
+                </View>
+                <Text style={styles.activityText} numberOfLines={1}>{item.text}</Text>
+                <Text style={styles.activityTime}>{item.time}</Text>
               </View>
-              <Text style={styles.activityText} numberOfLines={1}>{item.text}</Text>
-              <Text style={styles.activityTime}>{item.time}</Text>
-            </View>
-          ))}
+            ))
+          )}
         </View>
 
         <View style={{ height: 100 }} />
@@ -269,7 +320,7 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 3,
   },
-  statNumber: { fontSize: 38, fontWeight: '800', color: NAVY, lineHeight: 44, marginTop: 6 },
+  statNumber: { fontSize: 38, fontWeight: '800', color: NAVY, lineHeight: 46, marginTop: 8 },
   statCardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   statLabel: { fontSize: 10, fontWeight: '700', color: GREY_TEXT, letterSpacing: 0.8, marginTop: 4 },
 

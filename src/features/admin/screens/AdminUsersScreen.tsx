@@ -46,21 +46,35 @@ export default function AdminUsersScreen({ navigation }: any) {
   }, []);
 
   // Map backend users to local UserItem interface
-  const mappedUsers: UserItem[] = (users || []).map((u: any) => ({
-    id: u._id,
-    name: u.fullName || 'User',
-    email: u.email,
-    role: (u.role?.charAt(0) + u.role?.slice(1).toLowerCase()) as any,
-    avatar: u.avatarUrl || 'https://i.pravatar.cc/150?u=' + u._id,
-    status: 'active', // Backend doesn't support inactive yet
-  }));
+  const mappedUsers: UserItem[] = (users || []).map((u: any) => {
+    const rawRole = u.role || 'customer';
+    const capitalised = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
+    
+    // Assign specific faces for the demo users so they look distinct
+    let avatar = u.avatarUrl;
+    if (!avatar) {
+       if (u.email === 'admin@plateform.com') avatar = 'https://i.pravatar.cc/150?img=68';
+       else if (u.email === 'chef@plateform.com') avatar = 'https://i.pravatar.cc/150?img=44';
+       else if (u.email === 'driver@plateform.com') avatar = 'https://i.pravatar.cc/150?img=66';
+       else avatar = `https://ui-avatars.com/api/?name=${encodeURIComponent(u.fullName || 'User')}&background=random&color=fff`;
+    }
+
+    return {
+      id: u._id,
+      name: u.fullName || 'User',
+      email: u.email,
+      role: capitalised as any,
+      avatar,
+      status: 'active',
+    };
+  });
 
   const filtered = activeRole === 'All' ? mappedUsers : mappedUsers.filter((u) => u.role === activeRole);
 
-  const totalCount = mappedUsers.length;
+  const totalCount     = mappedUsers.length;
   const customersCount = mappedUsers.filter(u => u.role === 'Customer').length;
-  const chefsCount = mappedUsers.filter(u => u.role === 'Chef').length;
-  const driversCount = mappedUsers.filter(u => u.role === 'Driver').length;
+  const chefsCount     = mappedUsers.filter(u => u.role === 'Chef').length;
+  const driversCount   = mappedUsers.filter(u => u.role === 'Driver').length;
 
   const renderUser = ({ item }: { item: UserItem }) => (
     <View style={styles.userCard}>

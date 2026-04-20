@@ -7,6 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore, getDeliveryMeta } from '@/store/useStore';
 
+// Helper: read from saved order data, fall back to offline calc
+const getOrderFee = (o: any): number => o.deliveryFee || getDeliveryMeta(o.deliveryAddress).fee;
+const getOrderDist = (o: any): number => o.deliveryDistance || getDeliveryMeta(o.deliveryAddress).distNum;
+
 const GREEN  = '#2DB87E';
 const ORANGE = '#FF7A28';
 const NAVY   = '#1C1C2E';
@@ -26,14 +30,10 @@ export default function DriverHomeScreen({ navigation }: any) {
   const preparingOrders = orders.filter(o => o.status === 'ready_for_pickup');
   const incoming = preparingOrders.length > 0 ? preparingOrders[0] : null;
 
-  // Calculate dynamic stats
-  const todayEarnings = deliveredOrders.reduce((acc, o) => {
-    const meta = getDeliveryMeta(o.deliveryAddress);
-    return acc + meta.fee;
-  }, 0);
+  // Calculate dynamic stats from saved order data
+  const todayEarnings = deliveredOrders.reduce((acc, o) => acc + getOrderFee(o), 0);
   const tripsCount = deliveredOrders.length;
-  const totalDistanceNum = deliveredOrders.reduce((acc, o) => acc + getDeliveryMeta(o.deliveryAddress).distNum, 0);
-  const totalDistance = totalDistanceNum.toFixed(1);
+  const totalDistance = deliveredOrders.reduce((acc, o) => acc + getOrderDist(o), 0).toFixed(1);
 
   const handleAccept = async () => {
     if (incoming) {
@@ -42,7 +42,11 @@ export default function DriverHomeScreen({ navigation }: any) {
     }
   };
 
-  const orderMeta = incoming ? getDeliveryMeta(incoming.deliveryAddress) : null;
+  const orderMeta = incoming ? { 
+    dist: incoming.deliveryDistance ? `${incoming.deliveryDistance.toFixed(1)} km` : getDeliveryMeta(incoming.deliveryAddress).dist,
+    time: incoming.deliveryTime ? `~${incoming.deliveryTime} min` : getDeliveryMeta(incoming.deliveryAddress).time,
+    fee: getOrderFee(incoming),
+  } : null;
 
 
   return (
@@ -52,8 +56,8 @@ export default function DriverHomeScreen({ navigation }: any) {
       {/* Header */}
       <View style={styles.header}>
         {/* Menu Icon Placeholder */}
-        <TouchableOpacity style={styles.menuBtn} onPress={logout}>
-           <Ionicons name="log-out-outline" size={24} color={NAVY} />
+        <TouchableOpacity style={styles.menuBtn} onPress={() => navigation.navigate('DriverProfile')}>
+           <Ionicons name="person-circle-outline" size={28} color={NAVY} />
         </TouchableOpacity>
 
         <View style={styles.locationRow}>
@@ -222,9 +226,8 @@ export default function DriverHomeScreen({ navigation }: any) {
                   {/* Recent Deliveries */}
                   <Text style={[styles.sectionTitle, { marginTop: 20, fontSize: 14 }]}>Recent Deliveries</Text>
                   {deliveredOrders.slice(0, 4).map((o, i) => {
-                    const meta = getDeliveryMeta(o.deliveryAddress);
                     const customer = (o.user as any);
-                    const earned = meta.fee.toFixed(2);
+                    const earned = getOrderFee(o).toFixed(2);
                     return (
                       <View key={o._id} style={styles.recentCard}>
                         <View style={styles.recentLeft}>
@@ -243,7 +246,7 @@ export default function DriverHomeScreen({ navigation }: any) {
                         </View>
                         <View style={styles.recentRight}>
                           <Text style={styles.recentEarned}>+Rs.{earned}</Text>
-                          <Text style={styles.recentDist}>{meta.dist}</Text>
+                          <Text style={styles.recentDist}>{getOrderDist(o).toFixed(1)} km</Text>
                         </View>
                       </View>
                     );

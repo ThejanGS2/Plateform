@@ -4,16 +4,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
 import { AppButton } from '@/components/AppButton';
-import { useStore, getDeliveryMeta } from '@/store/useStore';
+import { useStore } from '@/store/useStore';
 
 // Local mock items removed
 
 export default function CartScreen({ navigation }: any) {
-  const { cart, updateCartQty, removeFromCart, currentAddress } = useStore();
+  const { cart, updateCartQty, removeFromCart, currentAddress, deliveryMeta, isCalculatingDelivery } = useStore();
 
   const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
-  const deliveryMeta = getDeliveryMeta(currentAddress);
-  const deliveryFee = cart.length > 0 ? deliveryMeta.fee : 0;
+  const deliveryFee = cart.length > 0 ? (deliveryMeta?.fee ?? 0) : 0;
   const total = subtotal + deliveryFee;
 
   return (
@@ -77,9 +76,23 @@ export default function CartScreen({ navigation }: any) {
         <View style={styles.totalRow}>
            <View style={{flexDirection:'row', alignItems:'baseline', gap:8}}>
              <Text style={styles.totalLabel}>TOTAL:</Text>
-             <Text style={styles.totalValue}>Rs.{total}</Text>
+             {isCalculatingDelivery ? (
+               <Text style={[styles.totalValue, { fontSize: 18, color: Colors.textSecondary }]}>Calculating...</Text>
+             ) : (
+               <Text style={styles.totalValue}>Rs.{total}</Text>
+             )}
            </View>
            <TouchableOpacity onPress={() => navigation.navigate('PaymentBreakdown')}><Text style={styles.breakdownText}>Breakdown {'>'}</Text></TouchableOpacity>
+        </View>
+        
+        {/* Delivery fee mini-row */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 }}>
+          <Text style={{ fontSize: 13, color: Colors.textSecondary }}>
+            Delivery fee ({deliveryMeta?.dist ?? '...'}, {typeof deliveryMeta?.time === 'number' ? `~${deliveryMeta.time} min` : (deliveryMeta?.time ?? '...')})
+          </Text>
+          <Text style={{ fontSize: 13, color: Colors.textSecondary, fontWeight: '600' }}>
+            {isCalculatingDelivery ? '...' : `Rs.${deliveryFee}`}
+          </Text>
         </View>
         
         <AppButton title="PLACE ORDER" onPress={() => navigation.navigate('PaymentMethod')} />

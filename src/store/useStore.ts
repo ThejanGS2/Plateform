@@ -14,6 +14,7 @@ import {
 } from '@/api/orderApi';
 import { fetchMyNotificationsApi } from '@/api/notificationApi';
 import { fetchUsersApi } from '@/api/userApi';
+import { fetchTrueDeliveryDistance } from '@/utils/distanceApi';
 
 export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready_for_pickup' | 'out_for_delivery' | 'delivered' | 'cancelled';
 
@@ -29,6 +30,9 @@ export interface Order {
   totalAmount: number;
   status: OrderStatus;
   deliveryAddress: string;
+  deliveryDistance?: number;
+  deliveryTime?: number;
+  deliveryFee?: number;
   pickupLocation?: string;
   dropoffLocation?: string;
   createdAt: string;
@@ -96,9 +100,28 @@ interface AppState {
   clearCart: () => void;
   chefStats: any | null;
   loadChefStats: () => Promise<void>;
+  
+  // Real Async Distance variables
+  deliveryMeta: { distNum: number, time: number | string, dist: string, fee: number };
+  isCalculatingDelivery: boolean;
+  calculateDeliveryMetaAsync: (address: string) => Promise<void>;
 }
 export const getDeliveryMeta = (address: string) => {
   const safeAddress = address || 'Default String For Hash';
+  
+  // Specific override for demo addresses mapped physically in the UI
+  if (safeAddress.toLowerCase().includes('wimalawansa') || safeAddress.toLowerCase().includes('dean')) {
+    const distNum = 1.2;
+    const time = 3;
+    const fee = Math.floor(distNum * 50); // Rs 60
+    return {
+      distNum,
+      dist: `1.2 km`,
+      time: `~3 min`,
+      fee
+    };
+  }
+
   const hash = safeAddress.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const distNum = (2.5 + (hash % 60) / 10);
   const time = Math.floor(8 + (hash % 30));
@@ -119,6 +142,8 @@ export const useStore = create<AppState>()(
       addresses: [],
       paymentMethods: [],
       currentAddress: 'Halal Lab office',
+      deliveryMeta: getDeliveryMeta('Halal Lab office'),
+      isCalculatingDelivery: false,
       justLoggedIn: false,
       trackingOrder: null,
       notifications: [],
@@ -126,7 +151,35 @@ export const useStore = create<AppState>()(
       setToken: (token) => set({ token }),
       setAddresses: (addresses) => set({ addresses }),
       setPaymentMethods: (methods) => set({ paymentMethods: methods }),
-      setCurrentAddress: (address) => set({ currentAddress: address }),
+      setCurrentAddress: (address) => {
+        set({ currentAddress: address });
+        get().calculateDeliveryMetaAsync(address);
+      },
+      calculateDeliveryMetaAsync: async (address: string) => {
+        set({ isCalculatingDelivery: true, deliveryMeta: { distNum: 0, time: 0, dist: 'Calculating...', fee: 0 } });
+        try {
+           const trueMeta = await fetchTrueDeliveryDistance(address);
+           if (trueMeta) {
+              const fee = Math.floor(trueMeta.distanceKm * 50);
+              set({ 
+                 deliveryMeta: {
+                    distNum: trueMeta.distanceKm,
+                    time: trueMeta.timeMins,
+                    dist: `${trueMeta.distanceKm.toFixed(1)} km`,
+                    fee
+                 },
+                 isCalculatingDelivery: false
+              });
+           } else {
+              // Fallback to offline algorithm
+              const fallback = getDeliveryMeta(address);
+              set({ deliveryMeta: fallback, isCalculatingDelivery: false });
+           }
+        } catch (e) {
+           const fallback = getDeliveryMeta(address);
+           set({ deliveryMeta: fallback, isCalculatingDelivery: false });
+        }
+      },
       setJustLoggedIn: (val) => set({ justLoggedIn: val }),
       orders: [],
       foods: [],
@@ -231,13 +284,16 @@ export const useStore = create<AppState>()(
         if (!token || cart.length === 0) return null;
 
         const subtotal = cart.reduce((sum, item) => sum + (item.food.price * item.qty), 0);
-        const deliveryMeta = getDeliveryMeta(currentAddress);
+        const deliveryMeta = get().deliveryMeta || getDeliveryMeta(currentAddress);
         const deliveryFee = cart.length > 0 ? deliveryMeta.fee : 0;
         const totalAmount = subtotal + deliveryFee;
 
         const orderData = {
           totalAmount,
           deliveryAddress: currentAddress,
+          deliveryDistance: deliveryMeta.distNum,
+          deliveryTime: typeof deliveryMeta.time === 'number' ? deliveryMeta.time : parseInt(String(deliveryMeta.time)) || 0,
+          deliveryFee,
           items: cart.map(item => ({
             food: item.food._id,
             quantity: item.qty,
