@@ -9,6 +9,9 @@ import userRoutes from './routes/userRoutes';
 import cartRoutes from './routes/cartRoutes';
 import favoriteRoutes from './routes/favoriteRoutes';
 import notificationRoutes from './routes/notificationRoutes';
+import inventoryRoutes from './routes/inventoryRoutes';
+import supplierRoutes from './routes/supplierRoutes';
+import wasteRoutes from './routes/wasteRoutes';
 
 dotenv.config({ override: true });
 
@@ -39,6 +42,9 @@ app.use('/api/user', userRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/inventory', inventoryRoutes);
+app.use('/api/suppliers', supplierRoutes);
+app.use('/api/waste', wasteRoutes);
 
 import mongoose from 'mongoose';
 

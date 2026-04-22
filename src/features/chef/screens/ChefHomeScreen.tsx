@@ -106,6 +106,28 @@ export default function ChefHomeScreen({ navigation }: any) {
           </View>
         </View>
 
+        {/* Quick Actions */}
+        <View style={styles.card}>
+          <View style={styles.rowBetween}>
+            <Text style={styles.sectionTitle}>Inventory Actions</Text>
+          </View>
+          <View style={styles.actionsGrid}>
+            {[
+              { icon: 'trash-outline', label: 'Waste Log', color: '#FF4B4B', screen: 'AdminWasteLog'  },
+              { icon: 'cube-outline',  label: 'Stock View', color: '#A855F7', screen: 'AdminInventory' },
+            ].map((a, i) => (
+              <TouchableOpacity
+                key={i}
+                style={[styles.actionBtn, { backgroundColor: a.color }]}
+                onPress={() => navigation?.navigate?.(a.screen)}
+              >
+                <Ionicons name={a.icon as any} size={24} color={WHITE} />
+                <Text style={styles.actionLabel}>{a.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
         {/* Popular Items */}
         <View style={styles.card}>
           <View style={styles.rowBetween}>
@@ -238,4 +260,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   navItem: { flex: 1, alignItems: 'center', paddingVertical: 10 },
+  actionsGrid: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  actionBtn: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+  },
+  actionLabel: { color: WHITE, fontWeight: '700', fontSize: 13 },
 });

@@ -33,6 +33,9 @@ import AdminMenuScreen from '@/features/admin/screens/AdminMenuScreen';
 import AdminFoodDetailsScreen from '@/features/admin/screens/AdminFoodDetailsScreen';
 import AdminReportsScreen from '@/features/admin/screens/AdminReportsScreen';
 import AdminAddItemScreen from '@/features/admin/screens/AdminAddItemScreen';
+import AdminInventoryScreen from '@/features/admin/screens/AdminInventoryScreen';
+import AdminSuppliersScreen from '@/features/admin/screens/AdminSuppliersScreen';
+import AdminWasteLogScreen from '@/features/admin/screens/AdminWasteLogScreen';
 
 // Chef screens
 import ChefHomeScreen from '@/features/chef/screens/ChefHomeScreen';
@@ -104,6 +107,9 @@ export const AppNavigator = () => {
       <Stack.Screen name="AdminFoodDetails"   component={AdminFoodDetailsScreen} />
       <Stack.Screen name="AdminReports"       component={AdminReportsScreen} />
       <Stack.Screen name="AdminAddItem"       component={AdminAddItemScreen} />
+      <Stack.Screen name="AdminInventory"     component={AdminInventoryScreen} />
+      <Stack.Screen name="AdminSuppliers"     component={AdminSuppliersScreen} />
+      <Stack.Screen name="AdminWasteLog"      component={AdminWasteLogScreen} />
 
       {/* ── Chef ── */}
       <Stack.Screen name="ChefHome"          component={ChefHomeScreen} />

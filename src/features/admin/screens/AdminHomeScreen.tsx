@@ -219,7 +219,10 @@ export default function AdminHomeScreen({ navigation }: any) {
               { icon: 'people-outline',      label: 'Users',     color: '#4C8EFF', screen: 'AdminUsers'    },
               { icon: 'fast-food-outline',   label: 'Menu',      color: ORANGE,    screen: 'AdminMenu'     },
               { icon: 'list-outline',        label: 'Orders',    color: '#2DB87E', screen: 'AdminOrders'   },
-              { icon: 'bar-chart-outline',   label: 'Reports',   color: '#A855F7', screen: 'AdminReports'  },
+              { icon: 'cube-outline',        label: 'Stock',     color: '#A855F7', screen: 'AdminInventory' },
+              { icon: 'business-outline',    label: 'Vendors',   color: '#4C8EFF', screen: 'AdminSuppliers' },
+              { icon: 'trash-outline',       label: 'Waste',     color: '#FF4B4B', screen: 'AdminWasteLog'  },
+              { icon: 'bar-chart-outline',   label: 'Reports',   color: '#2DB87E', screen: 'AdminReports'  },
             ].map((a, i) => (
               <TouchableOpacity
                 key={i}
