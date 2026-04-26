@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useStore } from '@/store/useStore';
 
 const ORANGE = '#FF7A28';
 const NAVY = '#1C1C2E';
@@ -83,6 +84,10 @@ export default function AdminFoodDetailsScreen({ route, navigation }: any) {
     recipe: DEFAULT_RECIPE,
   };
 
+  const { user } = useStore();
+  const isChef = user?.role?.toLowerCase() === 'chef';
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+
   const [activeSlide, setActiveSlide] = useState(0);
 
   const IngredientChip = ({ item: ing }: { item: Ingredient }) => (
@@ -121,7 +126,9 @@ export default function AdminFoodDetailsScreen({ route, navigation }: any) {
           />
           <View style={styles.heroBadgeRow}>
             <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeText}>{item.category}</Text>
+              <Text style={styles.heroBadgeText}>
+                {item.category?.name || (typeof item.category === 'string' ? item.category : '') || 'Category'}
+              </Text>
             </View>
             <View style={styles.heroDots}>
               <Dots count={3} active={activeSlide} />
@@ -156,7 +163,7 @@ export default function AdminFoodDetailsScreen({ route, navigation }: any) {
           <View style={styles.chefBadgeRow}>
             <View style={styles.chefBadge}>
               <Ionicons name="restaurant-outline" size={13} color={ORANGE} />
-              <Text style={styles.chefBadgeText}>By {item.chef}</Text>
+              <Text style={styles.chefBadgeText}>By {item.chef?.name || (typeof item.chef === 'string' ? item.chef : 'Chef Mario')}</Text>
             </View>
           </View>
         )}
@@ -164,14 +171,22 @@ export default function AdminFoodDetailsScreen({ route, navigation }: any) {
         <View style={styles.divider} />
 
         {/* Ingredients */}
-        <Text style={styles.sectionTitle}>INGREDIENTS</Text>
-        <View style={styles.ingGrid}>
-          {(item.ingredients ?? INGREDIENTS).map((ing: Ingredient, i: number) => (
-            <IngredientChip key={i} item={ing} />
-          ))}
-        </View>
-
-        <View style={styles.divider} />
+        {item.ingredients && item.ingredients.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>INGREDIENTS</Text>
+            <View style={styles.ingGrid}>
+              {item.ingredients.map((ing: any, i: number) => (
+                <View key={i} style={styles.ingChipWrap}>
+                  <View style={styles.ingCircle}>
+                    <Text style={styles.ingEmoji}>{ing.emoji}</Text>
+                  </View>
+                  <Text style={styles.ingLabel}>{ing.label}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={styles.divider} />
+          </>
+        )}
 
         {/* Description */}
         <Text style={styles.sectionTitle}>Description</Text>
@@ -179,18 +194,22 @@ export default function AdminFoodDetailsScreen({ route, navigation }: any) {
 
         <View style={styles.divider} />
 
-        {/* Recipe */}
-        <Text style={styles.sectionTitle}>RECIPE</Text>
-        <View style={styles.recipeList}>
-          {(item.recipe ?? DEFAULT_RECIPE).map((step: string, i: number) => (
-            <View key={i} style={styles.recipeStep}>
-              <View style={styles.stepNumCircle}>
-                <Text style={styles.stepNum}>{i + 1}</Text>
-              </View>
-              <Text style={styles.stepText}>{step}</Text>
+        {/* Recipe (Chef/Admin Only) */}
+        {(isChef || isAdmin) && item.recipe && item.recipe.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>RECIPE (CHEF ONLY)</Text>
+            <View style={styles.recipeList}>
+              {item.recipe.map((step: string, i: number) => (
+                <View key={i} style={styles.recipeStep}>
+                  <View style={styles.stepNumCircle}>
+                    <Text style={styles.stepNum}>{i + 1}</Text>
+                  </View>
+                  <Text style={styles.stepText}>{step}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          </>
+        )}
 
         <View style={{ height: 110 }} />
       </ScrollView>

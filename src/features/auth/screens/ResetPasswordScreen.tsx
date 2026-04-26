@@ -5,7 +5,7 @@ import { AppInput } from '@/components/AppInput';
 import { AppButton } from '@/components/AppButton';
 import { AuthHeader } from '../components/AuthHeader';
 
-const API_URL = 'http://172.20.10.2:5001/api';
+import { API_BASE_URL as API_URL } from '@/api/config';
 
 export default function ResetPasswordScreen({ navigation, route }: any) {
   const { email, code } = route.params || {};

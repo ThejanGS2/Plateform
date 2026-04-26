@@ -8,13 +8,17 @@ import { useStore } from '@/store/useStore';
 
 export default function FoodDetailsScreen({ route, navigation }: any) {
   const { foodId } = route.params;
-  const { foods, addToCart } = useStore();
+  const { foods, addToCart, user } = useStore();
   
   const food = foods.find(f => f._id === foodId);
   
   const [size, setSize] = useState('14"');
   const [qty, setQty] = useState(1);
   
+  const isChef = user?.role?.toLowerCase() === 'chef';
+  const isDriver = user?.role?.toLowerCase() === 'driver';
+  const isAdmin = user?.role?.toLowerCase() === 'admin';
+
   if (!food) {
     return (
       <SafeAreaView style={styles.container}>
@@ -23,14 +27,6 @@ export default function FoodDetailsScreen({ route, navigation }: any) {
       </SafeAreaView>
     );
   }
-
-  const [ingredients] = useState([
-    { id: '1', icon: 'shaker-outline', name: 'Salt' },
-    { id: '2', icon: 'food-drumstick-outline', name: 'Meat' },
-    { id: '3', icon: 'leaf', name: 'Herbs' },
-    { id: '4', icon: 'mushroom-outline', name: 'Mushroom' },
-    { id: '5', icon: 'chili-mild', name: 'Chili' },
-  ]);
 
   const handleAddToCart = () => {
     addToCart(food, size, qty);
@@ -128,17 +124,38 @@ export default function FoodDetailsScreen({ route, navigation }: any) {
           </View>
 
           {/* Ingredients */}
-          <Text style={[styles.sectionLabel, { marginTop: 32, marginBottom: 16 }]}>INGREDIENTS</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.ingredientsScroll}>
-            {ingredients.map(ing => (
-              <View key={ing.id} style={styles.ingredientContainer}>
-                <View style={styles.ingredientCircle}>
-                  <MaterialCommunityIcons name={ing.icon as any} size={26} color="#FF7A28" />
-                </View>
-                <Text style={{ fontSize: 10, color: '#A0A5BA', textAlign: 'center', marginTop: 4 }}>{ing.name}</Text>
+          {food.ingredients && food.ingredients.length > 0 && (
+            <>
+              <Text style={[styles.sectionLabel, { marginTop: 32, marginBottom: 16 }]}>INGREDIENTS</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.ingredientsScroll}>
+                {food.ingredients.map((ing: any, i: number) => (
+                  <View key={i} style={styles.ingredientContainer}>
+                    <View style={styles.ingredientCircle}>
+                      <Text style={{ fontSize: 24 }}>{ing.emoji}</Text>
+                    </View>
+                    <Text style={{ fontSize: 10, color: '#A0A5BA', textAlign: 'center', marginTop: 4 }}>{ing.label}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </>
+          )}
+
+          {/* Recipe (Chef Only) */}
+          {(isChef || isAdmin) && food.recipe && food.recipe.length > 0 && (
+            <>
+              <Text style={[styles.sectionLabel, { marginTop: 32, marginBottom: 16 }]}>RECIPE STEPS (CHEF ONLY)</Text>
+              <View style={{ gap: 12 }}>
+                {food.recipe.map((step: string, i: number) => (
+                  <View key={i} style={styles.recipeStepBox}>
+                    <View style={styles.stepNumCircle}>
+                      <Text style={styles.stepNumText}>{i + 1}</Text>
+                    </View>
+                    <Text style={styles.stepText}>{step}</Text>
+                  </View>
+                ))}
               </View>
-            ))}
-          </ScrollView>
+            </>
+          )}
         </View>
 
       </ScrollView>
@@ -242,4 +259,33 @@ const styles = StyleSheet.create({
   qtyBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#161924', borderRadius: 30, paddingHorizontal: 6, paddingVertical: 6, gap: 16 },
   qtyBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.1)', justifyContent: 'center', alignItems: 'center' },
   qtyValue: { fontSize: 16, fontWeight: '600', color: Colors.white },
+
+  recipeStepBox: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F6F8FA',
+    borderRadius: 12,
+    padding: 12,
+    gap: 12,
+  },
+  stepNumCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#FF7A28',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  stepNumText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  stepText: {
+    fontSize: 14,
+    color: '#1C1C2E',
+    flex: 1,
+    lineHeight: 20,
+  },
 });

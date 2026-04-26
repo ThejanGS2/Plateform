@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,133 +9,58 @@ import {
   Image,
   StatusBar,
   Alert,
+  ScrollView,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useStore } from '@/store/useStore';
 
 const ORANGE = '#FF7A28';
 const NAVY = '#1C1C2E';
 const WHITE = '#FFFFFF';
 const GREY = '#9E9E9E';
 
-type Category = 'All' | 'Breakfast' | 'Lunch' | 'Dinner';
-
-interface FoodItem {
-  id: string;
-  name: string;
-  category: Category;
-  price: number;
-  rating: number;
-  reviews: number;
-  pickupType: string;
-  image: string;
-}
-
-const ALL_ITEMS: FoodItem[] = [
-  {
-    id: '1',
-    name: 'Chicken Thai Biriyani',
-    category: 'Breakfast',
-    price: 60,
-    rating: 4.9,
-    reviews: 10,
-    pickupType: 'Pick UP',
-    image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80',
-  },
-  {
-    id: '2',
-    name: 'Chicken Bhuna',
-    category: 'Breakfast',
-    price: 30,
-    rating: 4.9,
-    reviews: 10,
-    pickupType: 'Pick UP',
-    image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=200&q=80',
-  },
-  {
-    id: '3',
-    name: 'Mazalichiken Halim',
-    category: 'Breakfast',
-    price: 25,
-    rating: 4.9,
-    reviews: 10,
-    pickupType: 'Pick UP',
-    image: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=200&q=80',
-  },
-  {
-    id: '4',
-    name: 'Grilled Salmon',
-    category: 'Lunch',
-    price: 55,
-    rating: 4.8,
-    reviews: 23,
-    pickupType: 'Delivery',
-    image: 'https://images.unsplash.com/photo-1467003909585-2f8a72700288?w=200&q=80',
-  },
-  {
-    id: '5',
-    name: 'Caesar Salad',
-    category: 'Lunch',
-    price: 22,
-    rating: 4.7,
-    reviews: 15,
-    pickupType: 'Pick UP',
-    image: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80',
-  },
-  {
-    id: '6',
-    name: 'Pasta Carbonara',
-    category: 'Dinner',
-    price: 40,
-    rating: 4.9,
-    reviews: 31,
-    pickupType: 'Delivery',
-    image: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=200&q=80',
-  },
-  {
-    id: '7',
-    name: 'Butter Garlic Prawns',
-    category: 'Dinner',
-    price: 70,
-    rating: 4.8,
-    reviews: 18,
-    pickupType: 'Pick UP',
-    image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=200&q=80',
-  },
-];
-
-const CATEGORIES: Category[] = ['All', 'Breakfast', 'Lunch', 'Dinner'];
+const CATEGORIES = ['All', 'Breakfast', 'Lunch', 'Dinner'];
 
 export default function ChefFoodListScreen({ navigation }: any) {
-  const [items, setItems] = useState<FoodItem[]>(ALL_ITEMS);
-  const [selectedCategory, setSelectedCategory] = useState<Category>('All');
+  const { foods, loadFoods, categories, loadCategories } = useStore();
+  const [selectedCategory, setSelectedCategory] = useState('All');
+
+  useFocusEffect(
+    useCallback(() => {
+      loadFoods();
+      loadCategories();
+    }, [])
+  );
 
   const filtered =
     selectedCategory === 'All'
-      ? items
-      : items.filter((i) => i.category === selectedCategory);
+      ? foods
+      : foods.filter((v: any) => 
+          (typeof v.category === 'string' && v.category === selectedCategory) || 
+          (v.category?.name === selectedCategory)
+        );
 
-  const goToDetails = (item: FoodItem) => {
+  const goToDetails = (item: any) => {
     try {
-      navigation.navigate('ChefFoodDetails', {
-        item: {
-          ...item,
-          location: 'Kentucky 39495',
-          description:
-            'Lorem ipsum dolor sit amet, consetdur Maton adipiscing elit. Bibendum in vel, mattis et amet dui mauris turpis.',
-        },
-      });
+      navigation.navigate('ChefFoodDetails', { item });
     } catch (err: any) {
       Alert.alert('Nav Error', err?.message ?? String(err));
     }
   };
 
-  const renderItem = ({ item }: { item: FoodItem }) => (
+  const renderItem = ({ item }: { item: any }) => (
     <Pressable
       onPress={() => goToDetails(item)}
       style={({ pressed }) => [styles.foodCard, { opacity: pressed ? 0.85 : 1 }]}
     >
-      <Image source={{ uri: item.image }} style={styles.foodImage} resizeMode="cover" />
+      <Image 
+        source={{ uri: item.imageUrl || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80' }} 
+        style={styles.foodImage} 
+        resizeMode="cover" 
+      />
       <View style={styles.foodInfo}>
         <View style={styles.cardTopRow}>
           <Text style={styles.foodName}>{item.name}</Text>
@@ -144,20 +69,13 @@ export default function ChefFoodListScreen({ navigation }: any) {
             onPress={(e) => {
               e.stopPropagation();
               Alert.alert(
-                'Manage Item',
-                `What do you want to do with "${item.name}"?`,
+                'Item Info',
+                `View details for "${item.name}"?`,
                 [
                   { text: 'Cancel', style: 'cancel' },
                   { 
-                    text: 'Delete', 
-                    style: 'destructive',
-                    onPress: () => {
-                      setItems((prev) => prev.filter((i) => i.id !== item.id));
-                    }
-                  },
-                  { 
-                    text: 'Edit', 
-                    onPress: () => navigation.navigate('ChefAddItem', { item }) 
+                    text: 'View Details', 
+                    onPress: () => goToDetails(item)
                   },
                 ]
               );
@@ -167,7 +85,9 @@ export default function ChefFoodListScreen({ navigation }: any) {
           </TouchableOpacity>
         </View>
         <View style={styles.categoryBadge}>
-          <Text style={styles.categoryBadgeText}>{item.category}</Text>
+          <Text style={styles.categoryBadgeText}>
+            {item.category?.name || (typeof item.category === 'string' ? item.category : '') || 'Category'}
+          </Text>
         </View>
         <View style={styles.priceRow}>
           <Text style={styles.price}>Rs.{item.price}</Text>
@@ -195,9 +115,14 @@ export default function ChefFoodListScreen({ navigation }: any) {
         <View style={{ width: 28 }} />
       </View>
 
-      {/* Category Tabs */}
-      <View style={styles.tabs}>
-        {CATEGORIES.map((cat) => {
+      {/* Category Tabs - horizontal scroll */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.tabsScroll}
+        contentContainerStyle={styles.tabsContent}
+      >
+        {['All', ...categories.map((c: any) => c.name)].map((cat, idx) => {
           const active = selectedCategory === cat;
           return (
             <TouchableOpacity
@@ -211,7 +136,7 @@ export default function ChefFoodListScreen({ navigation }: any) {
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
 
       {/* Item count */}
       <Text style={styles.totalCount}>Total {filtered.length.toString().padStart(2, '0')} items</Text>
@@ -219,7 +144,7 @@ export default function ChefFoodListScreen({ navigation }: any) {
       {/* List */}
       <FlatList
         data={filtered}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item._id}
         renderItem={renderItem}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
@@ -258,11 +183,15 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: NAVY },
 
-  tabs: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
+  tabsScroll: {
     paddingVertical: 8,
-    gap: 6,
+    maxHeight: 56,
+  },
+  tabsContent: {
+    paddingHorizontal: 20,
+    gap: 8,
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   catTab: {
     paddingHorizontal: 14,

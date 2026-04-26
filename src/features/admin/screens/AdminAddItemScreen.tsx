@@ -25,11 +25,11 @@ const LIGHT_BG = '#F2F3F7';
 const BORDER = '#E8E8E8';
 
 const BASIC_INGREDIENTS = [
-  { label: 'Salt',    emoji: '🧂', selected: true  },
+  { label: 'Salt',    emoji: '🧂', selected: false },
   { label: 'Chicken',emoji: '🍗', selected: false },
-  { label: 'Onion',  emoji: '🧅', selected: true  },
+  { label: 'Onion',  emoji: '🧅', selected: false },
   { label: 'Garlic', emoji: '🧄', selected: false },
-  { label: 'Pappers',emoji: '🌶️', selected: true  },
+  { label: 'Pappers',emoji: '🌶️', selected: false },
   { label: 'Ginger', emoji: '🫚', selected: false },
   { label: 'Egg',    emoji: '🥚', selected: false },
   { label: 'Butter', emoji: '🧈', selected: false },
@@ -81,20 +81,30 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
   const [isPickup, setIsPickup]       = useState(true);
   const [isDelivery, setIsDelivery]   = useState(false);
   const [details, setDetails]         = useState(itemToEdit?.description || '');
-  const [recipe, setRecipe]           = useState('');
+  const [recipeSteps, setRecipeSteps] = useState<string[]>(itemToEdit?.recipe || ['']);
   const [selectedCategory, setSelectedCategory] = useState(
     itemToEdit?.category?._id || itemToEdit?.category || ''
   );
   const [selectedChef, setSelectedChef]         = useState('Chef Mario');
-  const [images, setImages]           = useState<(string | null)[]>([itemToEdit?.imageUrl || null, null, null]);
-  const [basicIngs, setBasicIngs]     = useState<IngRow[]>(BASIC_INGREDIENTS);
-  const [fruitIngs, setFruitIngs]     = useState<IngRow[]>(FRUIT_INGREDIENTS);
+  const [imageUrl, setImageUrl]       = useState<string | null>(itemToEdit?.imageUrl || null);
+  const [basicIngs, setBasicIngs]     = useState<IngRow[]>(
+    BASIC_INGREDIENTS.map(i => ({
+      ...i,
+      selected: itemToEdit?.ingredients?.some((ing: any) => ing.label === i.label) || false
+    }))
+  );
+  const [fruitIngs, setFruitIngs]     = useState<IngRow[]>(
+    FRUIT_INGREDIENTS.map(i => ({
+      ...i,
+      selected: itemToEdit?.ingredients?.some((ing: any) => ing.label === i.label) || false
+    }))
+  );
 
   const [showAllBasic, setShowAllBasic] = useState(false);
   const [showAllFruit, setShowAllFruit] = useState(false);
 
   // ── Image picker ─────────────────────────────────────────────────────────────
-  const pickImage = async (index: number) => {
+  const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -102,11 +112,7 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
       quality: 0.7,
     });
     if (!result.canceled && result.assets.length > 0) {
-      setImages((prev) => {
-        const next = [...prev];
-        next[index] = result.assets[0].uri;
-        return next;
-      });
+      setImageUrl(result.assets[0].uri);
     }
   };
 
@@ -116,10 +122,24 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
   const toggleFruit = (i: number) =>
     setFruitIngs((prev) => { const n = [...prev]; n[i] = { ...n[i], selected: !n[i].selected }; return n; });
 
+  const addRecipeStep = () => setRecipeSteps([...recipeSteps, '']);
+  const removeRecipeStep = (index: number) => {
+    if (recipeSteps.length > 1) {
+      setRecipeSteps(recipeSteps.filter((_, i) => i !== index));
+    } else {
+      setRecipeSteps(['']);
+    }
+  };
+  const updateRecipeStep = (text: string, index: number) => {
+    const next = [...recipeSteps];
+    next[index] = text;
+    setRecipeSteps(next);
+  };
+
   const handleReset = () => {
     setItemName(''); setPrice(''); setIsPickup(false);
-    setIsDelivery(false); setDetails(''); setRecipe('');
-    setImages([null, null, null]);
+    setIsDelivery(false); setDetails(''); setRecipeSteps(['']);
+    setImageUrl(null);
     setBasicIngs(BASIC_INGREDIENTS.map((i) => ({ ...i, selected: false })));
     setFruitIngs(FRUIT_INGREDIENTS.map((i) => ({ ...i, selected: false })));
     setShowAllBasic(false);
@@ -136,8 +156,13 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
       price: Number(price),
       description: details,
       category: selectedCategory,
-      imageUrl: images[0] || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80',
+      imageUrl: imageUrl || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=200&q=80',
       isAvailable: true,
+      recipe: recipeSteps.filter(s => s.trim() !== ''),
+      ingredients: [
+        ...basicIngs.filter(i => i.selected).map(i => ({ label: i.label, emoji: i.emoji })),
+        ...fruitIngs.filter(i => i.selected).map(i => ({ label: i.label, emoji: i.emoji }))
+      ],
     };
 
     try {
@@ -210,22 +235,25 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
 
           {/* Category */}
           <FormField label="CATEGORY">
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            <View style={styles.catGrid}>
               {categories.map((cat) => {
                 const active = selectedCategory === cat._id;
                 return (
                   <TouchableOpacity
                     key={cat._id}
-                    style={[styles.catChip, active && styles.catChipActive]}
+                    style={[styles.catChip, active && styles.catChipActive, { width: '48%' }]}
                     onPress={() => setSelectedCategory(cat._id)}
                   >
-                    <Text style={[styles.catChipText, active && styles.catChipTextActive]}>
+                    <Text 
+                      style={[styles.catChipText, active && styles.catChipTextActive]}
+                      numberOfLines={1}
+                    >
                       {cat.name}
                     </Text>
                   </TouchableOpacity>
                 );
               })}
-            </ScrollView>
+            </View>
           </FormField>
 
           {/* Assign Chef */}
@@ -253,20 +281,18 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
           {/* Upload Photo */}
           <FormField label="UPLOAD PHOTO/VIDEO">
             <View style={styles.photoRow}>
-              {images.map((uri, index) =>
-                uri ? (
-                  <TouchableOpacity key={index} style={styles.photoSlotFilled} onPress={() => pickImage(index)}>
-                    <Image source={{ uri }} style={StyleSheet.absoluteFill} resizeMode="cover" />
-                    <View style={styles.photoEditBadge}>
-                      <Ionicons name="pencil" size={10} color={WHITE} />
-                    </View>
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity key={index} style={styles.photoSlotEmpty} onPress={() => pickImage(index)}>
-                    <Ionicons name="cloud-upload-outline" size={24} color={ORANGE} />
-                    <Text style={styles.photoAddLabel}>Add</Text>
-                  </TouchableOpacity>
-                )
+              {imageUrl ? (
+                <TouchableOpacity style={styles.photoSlotFilled} onPress={pickImage}>
+                  <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  <View style={styles.photoEditBadge}>
+                    <Ionicons name="pencil" size={10} color={WHITE} />
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.photoSlotEmpty} onPress={pickImage}>
+                  <Ionicons name="cloud-upload-outline" size={24} color={ORANGE} />
+                  <Text style={styles.photoAddLabel}>Add</Text>
+                </TouchableOpacity>
               )}
             </View>
           </FormField>
@@ -349,17 +375,29 @@ export default function AdminAddItemScreen({ route, navigation }: any) {
 
           {/* Recipe */}
           <FormField label="RECIPE STEPS">
-            <View style={[styles.inputBox, styles.textAreaBox, { height: 150 }]}>
-              <TextInput
-                style={[styles.input, styles.textArea, { height: 126 }]}
-                value={recipe}
-                onChangeText={setRecipe}
-                placeholder="Enter recipe steps (one step per line)..."
-                placeholderTextColor={GREY}
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-              />
+            <View style={{ gap: 10 }}>
+              {recipeSteps.map((step, index) => (
+                <View key={index} style={styles.recipeStepBox}>
+                  <View style={styles.stepNumCircleSmall}>
+                    <Text style={styles.stepNumText}>{index + 1}</Text>
+                  </View>
+                  <TextInput
+                    style={styles.recipeInput}
+                    value={step}
+                    onChangeText={(text) => updateRecipeStep(text, index)}
+                    placeholder={`Step ${index + 1}...`}
+                    placeholderTextColor={GREY}
+                    multiline
+                  />
+                  <TouchableOpacity onPress={() => removeRecipeStep(index)} style={styles.removeStepBtn}>
+                    <Ionicons name="close-circle" size={20} color={GREY} />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              <TouchableOpacity style={styles.addStepBtn} onPress={addRecipeStep}>
+                <Ionicons name="add-circle-outline" size={18} color={ORANGE} />
+                <Text style={styles.addStepBtnText}>ADD STEP</Text>
+              </TouchableOpacity>
             </View>
           </FormField>
 
@@ -413,8 +451,15 @@ const styles = StyleSheet.create({
     backgroundColor: WHITE,
   },
   catChipActive: { backgroundColor: ORANGE, borderColor: ORANGE },
-  catChipText:   { fontSize: 12, fontWeight: '600', color: GREY },
+  catChipText:   { fontSize: 12, fontWeight: '600', color: GREY, textAlign: 'center' },
   catChipTextActive: { color: WHITE },
+
+  catGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    justifyContent: 'space-between'
+  },
 
   // Chef chips
   chefChip: {
@@ -480,4 +525,55 @@ const styles = StyleSheet.create({
     shadowColor: ORANGE, shadowOpacity: 0.35, shadowRadius: 12, elevation: 6,
   },
   saveBtnText: { color: WHITE, fontSize: 15, fontWeight: '800', letterSpacing: 1.2 },
+
+  recipeStepBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: WHITE,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: BORDER,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  stepNumCircleSmall: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: ORANGE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  stepNumText: {
+    color: WHITE,
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  recipeInput: {
+    flex: 1,
+    fontSize: 14,
+    color: NAVY,
+    minHeight: 40,
+  },
+  removeStepBtn: {
+    padding: 4,
+  },
+  addStepBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: ORANGE,
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  addStepBtnText: {
+    color: ORANGE,
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });

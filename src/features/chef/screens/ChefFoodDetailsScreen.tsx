@@ -89,15 +89,12 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
   const [activeSlide, setActiveSlide] = useState(0);
 
   // ── Ingredient chip ────────────────────────────────────────────────────────
-  const IngredientChip = ({ item: ing }: { item: Ingredient }) => (
+  const IngredientChip = ({ item: ing }: { item: any }) => (
     <View style={styles.ingChipWrap}>
       <View style={styles.ingCircle}>
         <Text style={styles.ingEmoji}>{ing.emoji}</Text>
       </View>
-      <Text style={styles.ingLabel}>
-        {ing.label}
-        {ing.allergy ? '\n(Alergy)' : ''}
-      </Text>
+      <Text style={styles.ingLabel}>{ing.label}</Text>
     </View>
   );
 
@@ -119,7 +116,7 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
         {/* ── Hero Image ──────────────────────────────────────────────────── */}
         <View style={styles.heroWrap}>
           <Image
-            source={{ uri: item.image }}
+            source={{ uri: item.imageUrl || item.image || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=600&q=80' }}
             style={styles.heroImage}
             resizeMode="cover"
           />
@@ -127,7 +124,9 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
           {/* Overlay badges */}
           <View style={styles.heroBadgeRow}>
             <View style={styles.heroBadge}>
-              <Text style={styles.heroBadgeText}>{item.category}</Text>
+              <Text style={styles.heroBadgeText}>
+                {item.category?.name || (typeof item.category === 'string' ? item.category : '') || 'Category'}
+              </Text>
             </View>
             <View style={styles.heroDots}>
               <Dots count={3} active={activeSlide} />
@@ -161,15 +160,17 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
         <View style={styles.divider} />
 
         {/* ── Ingredients ──────────────────────────────────────────────────── */}
-        <Text style={styles.sectionTitle}>INGREDIENTS</Text>
-        <View style={styles.ingGrid}>
-          {(item.ingredients ?? INGREDIENTS).map((ing: Ingredient, i: number) => (
-            <IngredientChip key={i} item={ing} />
-          ))}
-        </View>
-
-        {/* ── Divider ─────────────────────────────────────────────────────── */}
-        <View style={styles.divider} />
+        {item.ingredients && item.ingredients.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>INGREDIENTS</Text>
+            <View style={styles.ingGrid}>
+              {item.ingredients.map((ing: any, i: number) => (
+                <IngredientChip key={i} item={ing} />
+              ))}
+            </View>
+            <View style={styles.divider} />
+          </>
+        )}
 
         {/* ── Description ──────────────────────────────────────────────────── */}
         <Text style={styles.sectionTitle}>Description</Text>
@@ -179,17 +180,21 @@ export default function ChefFoodDetailsScreen({ route, navigation }: any) {
         <View style={styles.divider} />
 
         {/* ── Recipe ────────────────────────────────────────────────────────── */}
-        <Text style={styles.sectionTitle}>RECIPE</Text>
-        <View style={styles.recipeList}>
-          {(item.recipe ?? DEFAULT_RECIPE).map((step: string, i: number) => (
-            <View key={i} style={styles.recipeStep}>
-              <View style={styles.stepNumCircle}>
-                <Text style={styles.stepNum}>{i + 1}</Text>
-              </View>
-              <Text style={styles.stepText}>{step}</Text>
+        {item.recipe && item.recipe.length > 0 && (
+          <>
+            <Text style={styles.sectionTitle}>RECIPE</Text>
+            <View style={styles.recipeList}>
+              {item.recipe.map((step: string, i: number) => (
+                <View key={i} style={styles.recipeStep}>
+                  <View style={styles.stepNumCircle}>
+                    <Text style={styles.stepNum}>{i + 1}</Text>
+                  </View>
+                  <Text style={styles.stepText}>{step}</Text>
+                </View>
+              ))}
             </View>
-          ))}
-        </View>
+          </>
+        )}
 
         <View style={{ height: 110 }} />
       </ScrollView>

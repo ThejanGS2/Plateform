@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useStore } from '@/store/useStore';
 
@@ -131,10 +132,12 @@ export default function AdminMenuScreen({ navigation }: any) {
   const { foods, categories, loadFoods, loadCategories, deleteProduct } = useStore();
   const [selectedCategory, setSelectedCategory] = useState('All');
 
-  useEffect(() => {
-    loadFoods();
-    loadCategories();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadFoods();
+      loadCategories();
+    }, [])
+  );
 
   const filtered =
     selectedCategory === 'All'
@@ -187,7 +190,7 @@ export default function AdminMenuScreen({ navigation }: any) {
 
         <View style={styles.categoryBadge}>
           <Text style={styles.categoryBadgeText}>
-            {typeof item.category === 'string' ? item.category : item.category?.name || 'Lunch'}
+            {item.category?.name || (typeof item.category === 'string' ? item.category : '') || 'Category'}
           </Text>
         </View>
 

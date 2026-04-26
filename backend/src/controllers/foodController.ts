@@ -43,9 +43,9 @@ export const getFoodById = async (req: Request, res: Response) => {
 };
 
 export const createFood = async (req: Request, res: Response) => {
-  const { name, category, price, description, imageUrl, isAvailable } = req.body;
+  const { name, category, price, description, imageUrl, isAvailable, recipe, ingredients } = req.body;
   try {
-    const newFood = await Food.create({ name, category, price, description, imageUrl, isAvailable });
+    const newFood = await Food.create({ name, category, price, description, imageUrl, isAvailable, recipe, ingredients });
     res.status(201).json(newFood);
   } catch (error) {
     console.error(error);

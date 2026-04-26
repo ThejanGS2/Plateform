@@ -16,10 +16,14 @@ const seedData = async () => {
 
     console.log('Seeding categories...');
     const categories = await Category.insertMany([
-      { name: 'Burger', icon: 'burger.png', color: '#FFD700' },
-      { name: 'Hotdog', icon: 'hotdog.png', color: '#FFA500' },
-      { name: 'Pizza', icon: 'pizza.png', color: '#FF6347' },
-      { name: 'Coffee', icon: 'coffee.png', color: '#8B4513' },
+      { name: 'Hot Dog', icon: 'hotdog.png', color: '#FFA500' },
+      { name: 'Burger',  icon: 'burger.png',  color: '#FFD700' },
+      { name: 'Pizza',   icon: 'pizza.png',   color: '#FF6347' },
+      { name: 'Mexican', icon: 'mexican.png', color: '#FF8C00' },
+      { name: 'Asian',   icon: 'asian.png',   color: '#FF4500' },
+      { name: 'Dessert', icon: 'dessert.png', color: '#FF1493' },
+      { name: 'Drink',   icon: 'drink.png',   color: '#1E90FF' },
+      { name: 'Salad',   icon: 'salad.png',   color: '#32CD32' },
     ]);
 
     console.log('Seeding food items...');

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
@@ -9,18 +10,42 @@ import { useStore } from '@/store/useStore';
 
 export default function HomeScreen({ navigation }: any) {
   const [activeCategory, setActiveCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
   const { user, currentAddress, foods, categories, cart, loadFoods, loadCategories } = useStore();
 
-  useEffect(() => {
-    loadFoods();
-    loadCategories();
-  }, []);
+  // Map category names to emojis
+  const CATEGORY_EMOJI: Record<string, string> = {
+    'All': '🔥',
+    'Hot Dog': '🌭',
+    'Burger': '🍔',
+    'Pizza': '🍕',
+    'Mexican': '🌮',
+    'Asian': '🍜',
+    'Dessert': '🍰',
+    'Drink': '🥤',
+    'Salad': '🥗',
+  };
 
-  const filteredFoods = foods.filter(food => 
-    activeCategory === 'All' || 
-    (typeof food.category === 'string' && food.category === activeCategory) ||
-    (food.category?.name === activeCategory)
+  useFocusEffect(
+    useCallback(() => {
+      loadFoods();
+      loadCategories();
+    }, [])
   );
+
+  const filteredFoods = foods.filter(food => {
+    const matchesCategory =
+      activeCategory === 'All' ||
+      (typeof food.category === 'string' && food.category === activeCategory) ||
+      (food.category?.name === activeCategory);
+
+    const matchesSearch =
+      searchQuery.trim() === '' ||
+      food.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (food.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesCategory && matchesSearch;
+  });
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -65,7 +90,16 @@ export default function HomeScreen({ navigation }: any) {
             style={styles.searchInput}
             placeholder="Search dishes, restaurants"
             placeholderTextColor={Colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            returnKeyType="search"
+            clearButtonMode="while-editing"
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Categories Section */}
@@ -91,7 +125,9 @@ export default function HomeScreen({ navigation }: any) {
                 onPress={() => setActiveCategory(cat.name)}
               >
                 <View style={[styles.categoryIconCircle, isActive ? styles.categoryIconCircleActive : styles.categoryIconCircleInactive]}>
-                  <Text style={styles.emoji}>{cat.name === 'All' ? '🔥' : '🍽️'}</Text>
+                  <Text style={styles.emoji}>
+                    {CATEGORY_EMOJI[cat.name] ?? '🍽️'}
+                  </Text>
                 </View>
                 <Text style={[styles.categoryName, isActive && styles.categoryNameActive]}>{cat.name}</Text>
               </TouchableOpacity>
@@ -99,9 +135,10 @@ export default function HomeScreen({ navigation }: any) {
           })}
         </ScrollView>
 
-        {/* Available Foods Section */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Available Foods</Text>
+          <Text style={styles.sectionTitle}>
+            {searchQuery.trim() !== '' ? `Results for "${searchQuery}"` : 'Available Foods'}
+          </Text>
         </View>
 
         <View style={styles.foodList}>

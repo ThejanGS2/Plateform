@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/theme/colors';
@@ -51,7 +51,15 @@ export default function CategoryDetailsScreen({ route, navigation }: any) {
               onPress={() => navigation.navigate('FoodDetails', { foodId: food._id })}
             >
               <View style={styles.foodImageContainer}>
-                 <Ionicons name="fast-food" size={40} color={Colors.white} />
+                {food.imageUrl ? (
+                  <Image
+                    source={{ uri: food.imageUrl }}
+                    style={{ width: '100%', height: '100%', borderRadius: 20 }}
+                    resizeMode="cover"
+                  />
+                ) : (
+                  <Ionicons name="fast-food" size={40} color={Colors.white} />
+                )}
               </View>
               <View style={styles.foodInfo}>
                 <Text style={styles.foodName}>{food.name}</Text>
