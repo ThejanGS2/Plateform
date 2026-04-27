@@ -8,11 +8,14 @@ import { useStore } from '@/store/useStore';
 import { API_BASE_URL as API_URL } from '@/api/config';
 
 export default function VerificationScreen({ navigation, route }: any) {
-  const { email = 'example@gmail.com', mode } = route.params || {};
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const { email = 'example@gmail.com', mode, devCode } = route.params || {};
+  const [otp, setOtp] = useState(
+    devCode ? devCode.split('') : ['', '', '', '', '', '']
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [timer, setTimer] = useState(50);
-  
+  const [emailFailed, setEmailFailed] = useState(!!devCode);
+
   // Refs for each input box
   const inputRefs = useRef<any[]>([]);
 
@@ -64,24 +67,19 @@ export default function VerificationScreen({ navigation, route }: any) {
       const data = await response.json();
 
       if (response.ok) {
-        if (data.user) {
-          useStore.getState().setUser(data.user);
-        }
         if (mode === 'resetPassword') {
           navigation.navigate('ResetPassword', { email, code });
         } else {
-          Alert.alert('Success', 'Email verified successfully!', [
-            { 
-              text: 'OK', 
-              onPress: () => {
-                const role = data.user?.role;
-                if (role === 'admin') navigation.replace('AdminHome');
-                else if (role === 'chef') navigation.replace('ChefHome');
-                else if (role === 'driver') navigation.replace('DriverHome');
-                else navigation.replace('Location');
-              } 
-            }
-          ]);
+          // Set user + token in store → AppNavigator detects token and
+          // automatically switches to the App stack with the correct initial route
+          if (data.user && data.token) {
+            useStore.getState().setUser(data.user);
+            useStore.getState().setToken(data.token);
+            useStore.getState().setJustLoggedIn(true);
+          } else if (data.user) {
+            useStore.getState().setUser(data.user);
+          }
+          // No navigation.replace needed — AppNavigator handles it reactively
         }
       } else {
         Alert.alert('Error', data.message || 'Verification failed');
@@ -114,19 +112,24 @@ export default function VerificationScreen({ navigation, route }: any) {
 
   return (
     <View style={styles.container}>
-      <AuthHeader 
-        title="Verification" 
+      <AuthHeader
+        title="Verification"
         subtitle={
           <Text style={{ fontSize: 14, color: Colors.white, opacity: 0.8, marginTop: 8, textAlign: 'center', lineHeight: 22 }}>
-            We have sent a 6-digit code to{'\n'}
+            {'We have sent a 6-digit code to\n'}
             <Text style={{ fontWeight: 'bold', color: Colors.white }}>{email}</Text>
-            {'\n'}and your registered phone number
           </Text>
         }
-        onBack={() => navigation.goBack()} 
+        onBack={() => navigation.goBack()}
       />
-      
+
       <View style={styles.content}>
+        {/* Dev fallback notice */}
+        {emailFailed && (
+          <View style={styles.devBanner}>
+            <Text style={styles.devBannerText}>⚠️ Email delivery failed — code has been pre-filled for you.</Text>
+          </View>
+        )}
         <View style={styles.codeHeaderRow}>
           <Text style={styles.codeLabel}>CODE</Text>
           <View style={styles.resendRow}>
@@ -138,7 +141,7 @@ export default function VerificationScreen({ navigation, route }: any) {
         </View>
 
         <View style={styles.otpRow}>
-          {otp.map((digit, index) => (
+          {otp.map((digit: string, index: number) => (
             <TextInput
               key={index}
               ref={(ref) => (inputRefs.current[index] = ref)}
@@ -217,5 +220,18 @@ const styles = StyleSheet.create({
   timerText: {
     fontSize: 14,
     color: '#8A8A9D',
+  },
+  devBanner: {
+    backgroundColor: '#FFF3CD',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFB01D',
+  },
+  devBannerText: {
+    fontSize: 12,
+    color: '#856404',
+    lineHeight: 18,
   },
 });

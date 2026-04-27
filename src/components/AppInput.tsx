@@ -9,9 +9,11 @@ interface AppInputProps {
   value: string;
   onChangeText: (text: string) => void;
   secureTextEntry?: boolean;
-  keyboardType?: 'default' | 'email-address' | 'numeric';
+  keyboardType?: 'default' | 'email-address' | 'numeric' | 'phone-pad';
   icon?: keyof typeof Ionicons.glyphMap;
   style?: ViewStyle;
+  textContentType?: 'none' | 'password' | 'newPassword' | 'emailAddress' | 'name' | 'telephoneNumber' | 'oneTimeCode';
+  autoComplete?: 'off' | 'password' | 'password-new' | 'email' | 'name' | 'tel';
 }
 
 export const AppInput: React.FC<AppInputProps> = ({
@@ -23,6 +25,8 @@ export const AppInput: React.FC<AppInputProps> = ({
   keyboardType = 'default',
   icon,
   style,
+  textContentType,
+  autoComplete,
 }) => {
   const [showPassword, setShowPassword] = useState(!secureTextEntry);
 
@@ -40,8 +44,8 @@ export const AppInput: React.FC<AppInputProps> = ({
           secureTextEntry={secureTextEntry && !showPassword}
           keyboardType={keyboardType}
           autoCapitalize="none"
-          textContentType="none" // Helps prevent unwanted system highlights
-          importantForAutofill="no" // Disables the "yellow box" on Android
+          textContentType={textContentType ?? 'none'}
+          autoComplete={autoComplete ?? 'off'}
         />
         {secureTextEntry && (
           <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>

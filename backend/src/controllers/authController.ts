@@ -60,8 +60,7 @@ export const register = async (req: Request, res: Response) => {
       verificationCode
     });
 
-        // Send email
-    await sendEmail(
+    const emailSent = await sendEmail(
       email,
       'Verify your Plateform account',
       `Your Plateform verification code is: ${verificationCode}\n\nEnter this code in the app to activate your account.`
@@ -69,15 +68,14 @@ export const register = async (req: Request, res: Response) => {
 
     // Send SMS if phone provided
     if (phone) {
-      await sendSMS(
-        phone,
-        `Your Plateform verification code is: ${verificationCode}`
-      );
+      await sendSMS(phone, `Your Plateform verification code is: ${verificationCode}`);
     }
 
     res.status(201).json({
       message: 'Registration successful. Please verify your account.',
-      email: newUser.email
+      email: newUser.email,
+      // Include code in response if email delivery failed (dev fallback)
+      ...(emailSent ? {} : { devCode: verificationCode }),
     });
   } catch (error) {
     console.error(error);

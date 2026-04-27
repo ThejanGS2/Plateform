@@ -43,7 +43,7 @@ export default function SignUpScreen({ navigation }: any) {
       const data = await response.json();
 
       if (response.ok) {
-        navigation.navigate('Verification', { email });
+        navigation.navigate('Verification', { email, devCode: data.devCode });
       } else {
         Alert.alert('Error', data.message || 'Registration failed');
       }
@@ -76,26 +76,32 @@ export default function SignUpScreen({ navigation }: any) {
           onChangeText={setEmail} 
           keyboardType="email-address"
         />
-        <AppInput 
-          label="PHONE NUMBER" 
-          placeholder="+94 77 123 4567" 
-          value={phone} 
-          onChangeText={setPhone} 
+        <AppInput
+          label="PHONE NUMBER"
+          placeholder="+94 77 123 4567"
+          value={phone}
+          onChangeText={setPhone}
           keyboardType="phone-pad"
+          textContentType="telephoneNumber"
+          autoComplete="tel"
         />
-        <AppInput 
-          label="PASSWORD" 
-          placeholder="********" 
-          value={password} 
-          onChangeText={setPassword} 
+        <AppInput
+          label="PASSWORD"
+          placeholder="********"
+          value={password}
+          onChangeText={setPassword}
           secureTextEntry
+          textContentType="newPassword"
+          autoComplete="password-new"
         />
-        <AppInput 
-          label="RE-TYPE PASSWORD" 
-          placeholder="********" 
-          value={retypePassword} 
-          onChangeText={setRetypePassword} 
+        <AppInput
+          label="RE-TYPE PASSWORD"
+          placeholder="********"
+          value={retypePassword}
+          onChangeText={setRetypePassword}
           secureTextEntry
+          textContentType="none"
+          autoComplete="off"
         />
 
         <AppButton 
