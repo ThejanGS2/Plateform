@@ -12,6 +12,7 @@ import notificationRoutes from './routes/notificationRoutes';
 import inventoryRoutes from './routes/inventoryRoutes';
 import supplierRoutes from './routes/supplierRoutes';
 import wasteRoutes from './routes/wasteRoutes';
+import reviewRoutes from './routes/reviewRoutes';
 
 dotenv.config({ override: true });
 
@@ -45,6 +46,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/suppliers', supplierRoutes);
 app.use('/api/waste', wasteRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 import mongoose from 'mongoose';
 

@@ -132,15 +132,20 @@ export default function ChefHomeScreen({ navigation }: any) {
         <View style={styles.card}>
           <View style={styles.rowBetween}>
             <Text style={styles.sectionTitle}>Popular Items This Week</Text>
-            <TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation?.navigate?.('ChefFoodList')}>
               <Text style={styles.seeAll}>See All</Text>
             </TouchableOpacity>
           </View>
           <View style={styles.popularGrid}>
             {(chefStats?.popularItems || []).length > 0 ? (
-               chefStats?.popularItems.map((item: any, i: number) => (
+              chefStats?.popularItems.slice(0, 4).map((item: any, i: number) => (
                 <View key={i} style={styles.popularCard}>
-                  <Image source={{ uri: item.uri || 'https://via.placeholder.com/300' }} style={styles.popularImage} resizeMode="cover" />
+                  <Image
+                    source={{ uri: item.uri || item.imageUrl || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=300&q=80' }}
+                    style={styles.popularImage}
+                    resizeMode="cover"
+                    onError={() => {}}
+                  />
                   <View style={styles.popularOverlay}>
                     <Text style={styles.popularName} numberOfLines={1}>{item.name}</Text>
                     <Text style={styles.popularOrders}>{item.orders} orders</Text>
@@ -148,9 +153,9 @@ export default function ChefHomeScreen({ navigation }: any) {
                 </View>
               ))
             ) : (
-                <View style={{flex: 1, height: 80, justifyContent: 'center', alignItems: 'center'}}>
-                    <Text style={{color: GREY_TEXT}}>No sales data yet</Text>
-                </View>
+              <View style={{flex: 1, height: 80, justifyContent: 'center', alignItems: 'center'}}>
+                <Text style={{color: GREY_TEXT}}>No sales data yet</Text>
+              </View>
             )}
           </View>
         </View>

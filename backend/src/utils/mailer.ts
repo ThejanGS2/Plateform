@@ -22,6 +22,6 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     console.log(`✅ Verification email sent to ${to}`);
   } catch (error) {
     console.error('❌ Error sending email:', error);
-    throw new Error('Failed to send verification email');
+    // Don't throw — email failure should not block registration
   }
 };

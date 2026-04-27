@@ -10,6 +10,14 @@ export const fetchMyNotificationsApi = async (token: string) => {
   return response.json();
 };
 
+export const fetchAllNotificationsApi = async (token: string) => {
+  const response = await fetch(`${API_BASE_URL}/notifications/all`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch all notifications');
+  return response.json();
+};
+
 export const markNotificationReadApi = async (token: string, id: string) => {
   const response = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
     method: 'PUT',

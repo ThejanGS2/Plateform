@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   View,
   Text,
@@ -7,107 +7,86 @@ import {
   TouchableOpacity,
   Image,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { useStore } from '@/store/useStore';
 
 const ORANGE = '#FF7A28';
 const NAVY = '#1C1C2E';
 const WHITE = '#FFFFFF';
 const GREY = '#9E9E9E';
-const BG = '#F9F9F9';
 
-interface NotifItem {
-  id: string;
-  avatar: string;
-  foodThumb: string;
-  userName: string;
-  action: string;
-  time: string;
-}
 
-const NOTIFICATIONS: NotifItem[] = [
-  {
-    id: '1',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=80&q=80',
-    userName: 'Tanbir Ahmed',
-    action: 'Placed a new order',
-    time: '20 min ago',
-  },
-  {
-    id: '2',
-    avatar: 'https://images.unsplash.com/photo-1499996860823-5214fcc65f8f?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=80&q=80',
-    userName: 'Salim Smith',
-    action: 'left a 5 star review',
-    time: '20 min ago',
-  },
-  {
-    id: '3',
-    avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=80&q=80',
-    userName: 'Royal Bengal',
-    action: 'agreed to cancel',
-    time: '20 min ago',
-  },
-  {
-    id: '4',
-    avatar: 'https://images.unsplash.com/photo-1552058544-f2b08422138a?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1626700051175-6818013e1d4f?w=80&q=80',
-    userName: 'Pabel Vuiya',
-    action: 'Placed a new order',
-    time: '20 min ago',
-  },
-];
 
-const MESSAGES: NotifItem[] = [
-  {
-    id: 'm1',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=80&q=80',
-    userName: 'Sara Khan',
-    action: 'Is my order ready yet?',
-    time: '5 min ago',
-  },
-  {
-    id: 'm2',
-    avatar: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1548869190-2a99cf3b5a16?w=80&q=80',
-    userName: 'James Riley',
-    action: 'Can you add less spice please?',
-    time: '12 min ago',
-  },
-  {
-    id: 'm3',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=80&q=80',
-    userName: 'Nina Patel',
-    action: 'Thank you for the quick prep!',
-    time: '25 min ago',
-  },
-];
+// Map notification type → icon name and colour
+const TYPE_META: Record<string, { icon: string; color: string; label: string }> = {
+  order_placed:    { icon: 'bag-check-outline',      color: '#2B84EA', label: 'Placed a new order' },
+  order_accepted:  { icon: 'checkmark-circle-outline', color: '#00E58F', label: 'Order accepted' },
+  order_preparing: { icon: 'restaurant-outline',      color: ORANGE,    label: 'Started preparing' },
+  order_ready:     { icon: 'bicycle-outline',         color: '#A855F7', label: 'Order ready for pickup' },
+  order_delivered: { icon: 'home-outline',            color: '#00E58F', label: 'Order delivered' },
+  order_cancelled: { icon: 'close-circle-outline',    color: '#FF4B4B', label: 'Order cancelled' },
+  review:          { icon: 'star-outline',            color: '#FFB01D', label: 'Left a review' },
+  default:         { icon: 'notifications-outline',   color: GREY,      label: 'Notification' },
+};
 
-type TabType = 'Notifications' | 'Messages';
+const relativeTime = (dateStr: string) => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+};
 
 export default function ChefNotificationsScreen({ navigation }: any) {
-  const [activeTab, setActiveTab] = useState<TabType>('Notifications');
+  const { notifications, loadNotifications, user } = useStore();
+  const [loading, setLoading] = useState(false);
 
-  const data = activeTab === 'Notifications' ? NOTIFICATIONS : MESSAGES;
-
-  const renderItem = ({ item }: { item: NotifItem }) => (
-    <View style={styles.notifRow}>
-      <Image source={{ uri: item.avatar }} style={styles.notifAvatar} />
-      <View style={styles.notifContent}>
-        <Text style={styles.notifText} numberOfLines={2}>
-          <Text style={styles.notifName}>{item.userName} </Text>
-          {item.action}
-        </Text>
-        <Text style={styles.notifTime}>{item.time}</Text>
-      </View>
-      <Image source={{ uri: item.foodThumb }} style={styles.notifThumb} />
-    </View>
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      const load = async () => {
+        setLoading(true);
+        await loadNotifications();
+        if (active) setLoading(false);
+      };
+      load();
+      return () => { active = false; };
+    }, [])
   );
+
+  const data = notifications;
+
+  const renderItem = ({ item }: { item: any }) => {
+    const meta = TYPE_META[item.type] ?? TYPE_META['default'];
+    const senderName = item.sender?.fullName || item.title || 'System';
+    const body = item.body || item.message || meta.label;
+    const avatarUri = item.sender?.avatarUrl
+      || `https://ui-avatars.com/api/?name=${encodeURIComponent(senderName)}&background=FF7A28&color=fff`;
+    const thumbUri = item.foodImage
+      || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=80&q=80';
+
+    return (
+      <View style={[styles.notifRow, !item.isRead && styles.unreadRow]}>
+        <Image source={{ uri: avatarUri }} style={styles.notifAvatar} />
+        <View style={styles.notifContent}>
+          <Text style={styles.notifText} numberOfLines={2}>
+            <Text style={styles.notifName}>{senderName} </Text>
+            {body}
+          </Text>
+          <Text style={styles.notifTime}>{relativeTime(item.createdAt)}</Text>
+        </View>
+        <View style={[styles.iconCircle, { backgroundColor: meta.color + '18' }]}>
+          <Ionicons name={meta.icon as any} size={20} color={meta.color} />
+        </View>
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -122,39 +101,32 @@ export default function ChefNotificationsScreen({ navigation }: any) {
         <View style={{ width: 28 }} />
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {(['Notifications', 'Messages'] as TabType[]).map((tab) => {
-          const active = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, active && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {tab === 'Messages' ? 'Messages (3)' : tab}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
 
       {/* List */}
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <ActivityIndicator color={ORANGE} style={{ marginTop: 60 }} />
+      ) : (
+        <FlatList
+          data={data}
+          keyExtractor={(item) => item._id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Ionicons name="notifications-off-outline" size={52} color="#E0E0E0" />
+              <Text style={styles.emptyText}>No notifications yet</Text>
+            </View>
+          }
+        />
+      )}
 
       {/* Bottom Nav */}
       <View style={styles.navbar}>
         {[
-          { icon: 'grid-outline', screen: 'ChefHome' },
-          { icon: 'list-outline', screen: 'ChefOrders' },
-          { icon: 'fast-food-outline', screen: 'ChefFoodList' },
+          { icon: 'grid-outline',          screen: 'ChefHome' },
+          { icon: 'list-outline',          screen: 'ChefOrders' },
+          { icon: 'fast-food-outline',     screen: 'ChefFoodList' },
           { icon: 'notifications-outline', screen: 'ChefNotifications', active: true },
         ].map((tab: any, i) => (
           <TouchableOpacity
@@ -162,7 +134,7 @@ export default function ChefNotificationsScreen({ navigation }: any) {
             style={styles.navItem}
             onPress={() => navigation?.navigate?.(tab.screen)}
           >
-            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : GREY} />
+            <Ionicons name={tab.icon} size={24} color={tab.active ? ORANGE : '#9E9E9E'} />
           </TouchableOpacity>
         ))}
       </View>
@@ -183,23 +155,6 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: NAVY },
 
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEFEF',
-    paddingHorizontal: 20,
-  },
-  tab: {
-    paddingBottom: 12,
-    paddingHorizontal: 4,
-    marginRight: 24,
-  },
-  tabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: ORANGE,
-  },
-  tabText: { fontSize: 14, color: GREY, fontWeight: '500' },
-  tabTextActive: { color: ORANGE, fontWeight: '700' },
 
   list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
 
@@ -211,18 +166,23 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F2F2F2',
     gap: 12,
   },
+  unreadRow: { backgroundColor: ORANGE + '08', marginHorizontal: -20, paddingHorizontal: 20 },
   notifAvatar: { width: 46, height: 46, borderRadius: 23 },
   notifContent: { flex: 1 },
   notifText: { fontSize: 13, color: NAVY, lineHeight: 19 },
   notifName: { fontWeight: '700', color: NAVY },
   notifTime: { fontSize: 11, color: GREY, marginTop: 4 },
-  notifThumb: { width: 46, height: 46, borderRadius: 10 },
+  iconCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  emptyBox: { alignItems: 'center', marginTop: 80, gap: 12 },
+  emptyText: { color: GREY, fontSize: 15 },
 
   navbar: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 20, left: 20, right: 20,
     height: 64,
     backgroundColor: WHITE,
     borderRadius: 32,

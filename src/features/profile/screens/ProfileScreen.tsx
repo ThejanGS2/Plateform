@@ -14,7 +14,6 @@ const MENU_GROUPS = [
   [
     { id: '3', title: 'Cart', icon: 'bag-outline', color: '#2B84EA', route: 'Cart' },
     { id: 'new', title: 'Order History', icon: 'receipt-outline', color: '#00E58F', route: 'OrderHistory' },
-    { id: '4', title: 'Favourite', icon: 'heart-outline', color: '#5C61F4', route: 'Favourite' },
     { id: '5', title: 'Notifications', icon: 'notifications-outline', color: '#FFB01D', route: 'Notifications' },
     { id: '6', title: 'Payment Method', icon: 'card-outline', color: '#2B84EA', route: 'PaymentMethod' },
   ],

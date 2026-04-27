@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useStore } from '@/store/useStore';
 import {
   View,
@@ -6,101 +6,84 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Image,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { fetchAllNotificationsApi } from '@/api/notificationApi';
 
 const ORANGE = '#FF7A28';
-const NAVY = '#1C1C2E';
+const NAVY  = '#1C1C2E';
 const WHITE = '#FFFFFF';
-const GREY = '#9E9E9E';
-const BG = '#F9F9F9';
+const GREY  = '#9E9E9E';
 
-interface NotifItem {
-  id: string;
-  avatar: string;
-  foodThumb: string;
-  userName: string;
-  action: string;
-  time: string;
-}
+// Icon + colour per notification type
+const TYPE_META: Record<string, { icon: string; color: string }> = {
+  ORDER_STATUS: { icon: 'bag-check-outline',       color: '#2B84EA' },
+  PROMOTION:    { icon: 'pricetag-outline',         color: ORANGE    },
+  ACCOUNT:      { icon: 'person-circle-outline',    color: '#A855F7' },
+  default:      { icon: 'notifications-outline',    color: GREY      },
+};
 
-// Removed static NOTIFICATIONS array in favor of dynamic generation from orders
-
-const MESSAGES: NotifItem[] = [
-  {
-    id: 'm1',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1551782450-17144efb9c50?w=80&q=80',
-    userName: 'Sara Khan',
-    action: 'My order has not arrived yet',
-    time: '5 min ago',
-  },
-  {
-    id: 'm2',
-    avatar: 'https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1548869190-2a99cf3b5a16?w=80&q=80',
-    userName: 'James Riley',
-    action: 'I want a refund for order #1023',
-    time: '12 min ago',
-  },
-  {
-    id: 'm3',
-    avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=80&q=80',
-    foodThumb: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=80&q=80',
-    userName: 'Chef Mario',
-    action: 'Can I update the weekly menu?',
-    time: '25 min ago',
-  },
-];
-
-type TabType = 'Notifications' | 'Messages';
+const relativeTime = (dateStr: string) => {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+};
 
 export default function AdminNotificationsScreen({ navigation }: any) {
-  const { orders, loadOrders } = useStore();
-  const [activeTab, setActiveTab] = useState<TabType>('Notifications');
+  const { token } = useStore();
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadOrders();
-  }, []);
+  const load = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const data = await fetchAllNotificationsApi(token);
+      setNotifications(data);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [token]);
 
-  const generatedNotifications = orders.map((order) => {
-    const statusMap: any = {
-      pending: 'placed a new order',
-      accepted: 'order was accepted',
-      preparing: 'is being cooked',
-      out_for_delivery: 'is out for delivery',
-      delivered: 'completed the delivery',
-      cancelled: 'requested cancellation',
-    };
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
-    return {
-      id: order._id,
-      avatar: 'https://i.pravatar.cc/150?u=' + order.user?._id,
-      foodThumb: order.items?.[0]?.food?.imageUrl || 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=80&q=80',
-      userName: order.user?.fullName || 'Customer',
-      action: statusMap[order.status] || 'updated an order',
-      time: 'just now', // Simplified for demo
-    };
-  }).reverse();
+  const renderItem = ({ item }: { item: any }) => {
+    const meta = TYPE_META[item.type] ?? TYPE_META['default'];
+    const senderName = item.user?.fullName || 'System';
+    const avatarLetter = senderName.charAt(0).toUpperCase();
 
-  const data = activeTab === 'Notifications' ? generatedNotifications : MESSAGES;
+    return (
+      <View style={[styles.row, !item.isRead && styles.unreadRow]}>
+        {/* Avatar circle with initials */}
+        <View style={[styles.avatarCircle, { backgroundColor: meta.color + '22' }]}>
+          <Text style={[styles.avatarLetter, { color: meta.color }]}>{avatarLetter}</Text>
+        </View>
 
-  const renderItem = ({ item }: { item: NotifItem }) => (
-    <View style={styles.notifRow}>
-      <Image source={{ uri: item.avatar }} style={styles.notifAvatar} />
-      <View style={styles.notifContent}>
-        <Text style={styles.notifText} numberOfLines={2}>
-          <Text style={styles.notifName}>{item.userName} </Text>
-          {item.action}
-        </Text>
-        <Text style={styles.notifTime}>{item.time}</Text>
+        <View style={styles.content}>
+          <Text style={styles.title} numberOfLines={1}>
+            <Text style={styles.bold}>{senderName} </Text>
+            {item.title}
+          </Text>
+          <Text style={styles.message} numberOfLines={2}>{item.message}</Text>
+          <Text style={styles.time}>{relativeTime(item.createdAt)}</Text>
+        </View>
+
+        <View style={[styles.iconCircle, { backgroundColor: meta.color + '18' }]}>
+          <Ionicons name={meta.icon as any} size={20} color={meta.color} />
+        </View>
       </View>
-      <Image source={{ uri: item.foodThumb }} style={styles.notifThumb} />
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>
@@ -112,42 +95,35 @@ export default function AdminNotificationsScreen({ navigation }: any) {
           <Ionicons name="chevron-back" size={24} color={NAVY} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Notifications</Text>
-        <View style={{ width: 28 }} />
+        <TouchableOpacity onPress={load}>
+          <Ionicons name="refresh-outline" size={22} color={NAVY} />
+        </TouchableOpacity>
       </View>
 
-      {/* Tabs */}
-      <View style={styles.tabs}>
-        {(['Notifications', 'Messages'] as TabType[]).map((tab) => {
-          const active = activeTab === tab;
-          return (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, active && styles.tabActive]}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                {tab === 'Messages' ? 'Messages (3)' : tab}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* List */}
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      {loading ? (
+        <ActivityIndicator color={ORANGE} style={{ marginTop: 60 }} />
+      ) : (
+        <FlatList
+          data={notifications}
+          keyExtractor={(item) => item._id}
+          renderItem={renderItem}
+          contentContainerStyle={styles.list}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Ionicons name="notifications-off-outline" size={52} color="#E0E0E0" />
+              <Text style={styles.emptyText}>No notifications yet</Text>
+            </View>
+          }
+        />
+      )}
 
       {/* Bottom Nav */}
       <View style={styles.navbar}>
         {[
-          { icon: 'grid-outline', screen: 'AdminHome' },
-          { icon: 'list-outline', screen: 'AdminOrders' },
-          { icon: 'people-outline', screen: 'AdminUsers' },
+          { icon: 'grid-outline',          screen: 'AdminHome'          },
+          { icon: 'list-outline',          screen: 'AdminOrders'        },
+          { icon: 'people-outline',        screen: 'AdminUsers'         },
           { icon: 'notifications-outline', screen: 'AdminNotifications', active: true },
         ].map((tab: any, i) => (
           <TouchableOpacity
@@ -176,20 +152,9 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 18, fontWeight: '700', color: NAVY },
 
-  tabs: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: '#EFEFEF',
-    paddingHorizontal: 20,
-  },
-  tab: { paddingBottom: 12, paddingHorizontal: 4, marginRight: 24 },
-  tabActive: { borderBottomWidth: 2, borderBottomColor: ORANGE },
-  tabText: { fontSize: 14, color: GREY, fontWeight: '500' },
-  tabTextActive: { color: ORANGE, fontWeight: '700' },
+  list: { paddingHorizontal: 20, paddingTop: 12, paddingBottom: 100 },
 
-  list: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 100 },
-
-  notifRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: 14,
@@ -197,18 +162,32 @@ const styles = StyleSheet.create({
     borderBottomColor: '#F2F2F2',
     gap: 12,
   },
-  notifAvatar: { width: 46, height: 46, borderRadius: 23 },
-  notifContent: { flex: 1 },
-  notifText: { fontSize: 13, color: NAVY, lineHeight: 19 },
-  notifName: { fontWeight: '700', color: NAVY },
-  notifTime: { fontSize: 11, color: GREY, marginTop: 4 },
-  notifThumb: { width: 46, height: 46, borderRadius: 10 },
+  unreadRow: {
+    backgroundColor: ORANGE + '08',
+    marginHorizontal: -20,
+    paddingHorizontal: 20,
+  },
+  avatarCircle: {
+    width: 46, height: 46, borderRadius: 23,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  avatarLetter: { fontSize: 18, fontWeight: '800' },
+  content: { flex: 1 },
+  title: { fontSize: 13, color: NAVY, lineHeight: 19 },
+  bold: { fontWeight: '700' },
+  message: { fontSize: 12, color: GREY, marginTop: 2, lineHeight: 17 },
+  time: { fontSize: 11, color: GREY, marginTop: 4 },
+  iconCircle: {
+    width: 44, height: 44, borderRadius: 22,
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  emptyBox: { alignItems: 'center', marginTop: 80, gap: 12 },
+  emptyText: { color: GREY, fontSize: 15 },
 
   navbar: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 20, left: 20, right: 20,
     height: 64,
     backgroundColor: WHITE,
     borderRadius: 32,
